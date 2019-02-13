@@ -2,10 +2,11 @@ import os
 import json
 import argparse
 import torch
-# import data_loader.data_loaders as module_data
 import data_loader as data_loaders
+import model as models
 
 from utils import Logger
+from utils import color_print as cp
 
 def get_instance(data_loaders, name, config):
     return getattr(data_loaders, config[name]['type'])(config['keywords'], **config[name]['args'])
@@ -15,6 +16,11 @@ def main(config, resume):
 
     # setup data_loader instances
     data_loader = get_instance(data_loaders, 'data_loader', config)
+    cp.print_progress(data_loader)
+
+    # build model architecture
+    model = get_instance(models, 'arch', config)
+    cp.print_progress(model)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='keyword spotting convrnn')

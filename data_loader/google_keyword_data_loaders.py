@@ -4,7 +4,6 @@ from torch.utils.data.dataset import Dataset
 
 from base import BaseDataLoader
 from utils import is_audio_file
-from utils import color_print as cp
 
 class GoogleKeywordDataset(Dataset):
     def __init__(self, keywords, data_dir):
@@ -47,14 +46,13 @@ class GoogleKeywordDataset(Dataset):
     def __len__(self):
         return len(self.labels)
 
-    def __str__(self):
-        return "total size : " + str(self.__len__())
-
 class GoogleKeywordDataLoader(BaseDataLoader):
     """
     Google Keyword data loading using BaseDataLoader
     """
     def __init__(self, keywords, data_dir, batch_size, shuffle, validation_split, num_workers, training=True):
         self.dataset = GoogleKeywordDataset(keywords, data_dir)
-        cp.print_progress("Preparing Google Keyword Dataset (", self.dataset.__str__(), ")")
         super(GoogleKeywordDataLoader, self).__init__(self.dataset, batch_size, shuffle, validation_split, num_workers)
+
+    def __str__(self):
+        return "Google Keyword Dataloader\n  total size : " + str(self.dataset.__len__())

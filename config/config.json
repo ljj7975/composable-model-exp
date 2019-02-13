@@ -4,7 +4,7 @@
     "keywords": ["yes", "no", "up", "down", "left", "right", "on", "off", "stop", "go"],
 
     "arch": {
-        "type": "MnistModel",
+        "type": "VanillaConv",
         "args": {}
     },
     "data_loader": {
