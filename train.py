@@ -10,23 +10,35 @@ import trainer.metric as metric_functions
 from utils import Logger
 from utils import color_print as cp
 
-def get_instance(data_loaders, name, config):
-    return getattr(data_loaders, config[name]['type'])(config['keywords'], **config[name]['args'])
+def get_instance(module, name, config, *args):
+    return getattr(module, config[name]['type'])(*args, **config[name]['args'])
 
 def main(config, resume):
     train_logger = Logger()
+    keywords = config['keywords']
 
     # setup data_loader instances
-    data_loader = get_instance(data_loaders, 'data_loader', config)
-    cp.print_progress(data_loader)
+    data_loader = get_instance(data_loaders, 'data_loader', config, keywords)
+    cp.print_progress('DATASET\n', data_loader)
 
     # build model architecture
-    model = get_instance(models, 'arch', config)
-    cp.print_progress(model)
+    model = get_instance(models, 'model', config, keywords)
+    cp.print_progress('MODEL\n', model)
 
     # get function handles of loss and metrics
     loss = getattr(loss_functions, config['loss'])
+    cp.print_progress('LOSS FUNCTION\n', loss.__name__)
+
     metrics = [getattr(metric_functions, met) for met in config['metrics']]
+    cp.print_progress('METRICS\n', [metric.__name__ for metric in metrics])
+
+    # build optimizer, learning rate scheduler. delete every lines containing lr_scheduler for disabling scheduler
+    trainable_params = filter(lambda p: p.requires_grad, model.parameters())
+    optimizer = get_instance(torch.optim, 'optimizer', config, trainable_params)
+    cp.print_progress('OPTIMIZER\n', optimizer)
+
+    lr_scheduler = get_instance(torch.optim.lr_scheduler, 'lr_scheduler', config, optimizer)
+    cp.print_progress('LR_SCHEDULER\n', type(lr_scheduler).__name__)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='keyword spotting convrnn')
