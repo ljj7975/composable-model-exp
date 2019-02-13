@@ -6,6 +6,7 @@ logging.basicConfig(level=logging.INFO, format='')
 class Logger:
     """
     Training process logger
+
     Note:
         Used by BaseTrainer to save training history.
     """
