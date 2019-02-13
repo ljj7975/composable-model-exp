@@ -4,6 +4,8 @@ import argparse
 import torch
 import data_loader as data_loaders
 import model as models
+import trainer.loss as loss_functions
+import trainer.metric as metric_functions
 
 from utils import Logger
 from utils import color_print as cp
@@ -21,6 +23,10 @@ def main(config, resume):
     # build model architecture
     model = get_instance(models, 'arch', config)
     cp.print_progress(model)
+
+    # get function handles of loss and metrics
+    loss = getattr(loss_functions, config['loss'])
+    metrics = [getattr(metric_functions, met) for met in config['metrics']]
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='keyword spotting convrnn')
