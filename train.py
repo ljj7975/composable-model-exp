@@ -15,14 +15,13 @@ def get_instance(module, name, config, *args):
 
 def main(config, resume):
     train_logger = Logger()
-    keywords = config['keywords']
 
     # setup data_loader instances
-    data_loader = get_instance(data_loaders, 'data_loader', config, keywords)
+    data_loader = get_instance(data_loaders, 'data_loader', config)
     cp.print_progress('DATASET\n', data_loader)
 
     # build model architecture
-    model = get_instance(models, 'model', config, keywords)
+    model = get_instance(models, 'model', config)
     cp.print_progress('MODEL\n', model)
 
     # get function handles of loss and metrics
