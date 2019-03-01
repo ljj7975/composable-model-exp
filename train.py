@@ -6,6 +6,7 @@ import data_loader as data_loaders
 import model as models
 import trainer.loss as loss_functions
 import trainer.metric as metric_functions
+from trainer import Trainer
 
 from utils import Logger
 from utils import color_print as cp
@@ -18,7 +19,10 @@ def main(config, resume):
 
     # setup data_loader instances
     data_loader = get_instance(data_loaders, 'data_loader', config)
-    cp.print_progress('DATASET\n', data_loader)
+    cp.print_progress('TRAIN DATASET\n', data_loader)
+
+    valid_data_loader = data_loader.split_validation()
+    cp.print_progress('VALID DATASET\n', valid_data_loader)
 
     # build model architecture
     model = get_instance(models, 'model', config)
@@ -38,6 +42,16 @@ def main(config, resume):
 
     lr_scheduler = get_instance(torch.optim.lr_scheduler, 'lr_scheduler', config, optimizer)
     cp.print_progress('LR_SCHEDULER\n', type(lr_scheduler).__name__)
+
+    trainer = Trainer(model, loss, metrics, optimizer,
+                      resume=resume,
+                      config=config,
+                      data_loader=data_loader,
+                      valid_data_loader=valid_data_loader,
+                      lr_scheduler=lr_scheduler,
+                      train_logger=train_logger)
+
+    cp.print_progress('TRAINER\n', trainer)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='keyword spotting convrnn')
