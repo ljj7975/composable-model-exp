@@ -2,48 +2,47 @@ import os
 import json
 import argparse
 import torch
+
 import data_loader as data_loaders
 import model as models
 import trainer.loss as loss_functions
 import trainer.metric as metric_functions
 from trainer import Trainer
 
+import utils.util as util
 from utils import Logger
 from utils import color_print as cp
-
-def get_instance(module, name, config, *args):
-    return getattr(module, config[name]['type'])(*args, **config[name]['args'])
 
 def main(config, resume):
     train_logger = Logger()
 
     # setup data_loader instances
-    data_loader = get_instance(data_loaders, 'data_loader', config)
+    data_loader = util.get_instance(data_loaders, 'data_loader', config)
     cp.print_progress('TRAIN DATASET\n', data_loader)
 
     valid_data_loader = data_loader.split_validation()
     cp.print_progress('VALID DATASET\n', valid_data_loader)
 
     # build model architecture
-    model = get_instance(models, 'model', config)
+    model = util.get_instance(models, 'model', config)
     cp.print_progress('MODEL\n', model)
 
     # get function handles of loss and metrics
-    loss = getattr(loss_functions, config['loss'])
-    cp.print_progress('LOSS FUNCTION\n', loss.__name__)
+    loss_fn = getattr(loss_functions, config['loss'])
+    cp.print_progress('LOSS FUNCTION\n', loss_fn.__name__)
 
     metrics = [getattr(metric_functions, met) for met in config['metrics']]
     cp.print_progress('METRICS\n', [metric.__name__ for metric in metrics])
 
     # build optimizer, learning rate scheduler. delete every lines containing lr_scheduler for disabling scheduler
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
-    optimizer = get_instance(torch.optim, 'optimizer', config, trainable_params)
+    optimizer = util.get_instance(torch.optim, 'optimizer', config, trainable_params)
     cp.print_progress('OPTIMIZER\n', optimizer)
 
-    lr_scheduler = get_instance(torch.optim.lr_scheduler, 'lr_scheduler', config, optimizer)
+    lr_scheduler = util.get_instance(torch.optim.lr_scheduler, 'lr_scheduler', config, optimizer)
     cp.print_progress('LR_SCHEDULER\n', type(lr_scheduler).__name__)
 
-    trainer = Trainer(model, loss, metrics, optimizer,
+    trainer = Trainer(model, loss_fn, metrics, optimizer,
                       resume=resume,
                       config=config,
                       data_loader=data_loader,
@@ -52,6 +51,8 @@ def main(config, resume):
                       train_logger=train_logger)
 
     cp.print_progress('TRAINER\n', trainer)
+
+    trainer.train()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='keyword spotting convrnn')
