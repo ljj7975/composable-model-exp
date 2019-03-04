@@ -4,7 +4,7 @@ import json
 import logging
 import datetime
 import torch
-from utils.util import ensure_dir
+from utils.util import makedir_exist_ok
 from utils.visualization import WriterTensorboardX
 
 
@@ -54,7 +54,7 @@ class BaseTrainer:
         self.writer = WriterTensorboardX(writer_dir, self.logger, cfg_trainer['tensorboardX'])
 
         # Save configuration file into checkpoint directory:
-        ensure_dir(self.checkpoint_dir)
+        makedir_exist_ok(self.checkpoint_dir)
         config_save_path = os.path.join(self.checkpoint_dir, 'config.json')
         with open(config_save_path, 'w') as handle:
             json.dump(config, handle, indent=4, sort_keys=False)
@@ -145,9 +145,9 @@ class BaseTrainer:
         :param log: logging information of the epoch
         :param save_best: if True, rename the saved checkpoint to 'model_best.pth'
         """
-        arch = type(self.model).__name__
+        model = type(self.model).__name__
         state = {
-            'arch': arch,
+            'model': model,
             'epoch': epoch,
             'logger': self.train_logger,
             'state_dict': self.model.state_dict(),
@@ -174,9 +174,9 @@ class BaseTrainer:
         self.start_epoch = checkpoint['epoch'] + 1
         self.mnt_best = checkpoint['monitor_best']
 
-        # load architecture params from checkpoint.
-        if checkpoint['config']['arch'] != self.config['arch']:
-            self.logger.warning('Warning: Architecture configuration given in config file is different from that of checkpoint. ' + \
+        # load model params from checkpoint.
+        if checkpoint['config']['model'] != self.config['model']:
+            self.logger.warning('Warning: Model configuration given in config file is different from that of checkpoint. ' + \
                                 'This may yield an exception while state_dict is being loaded.')
         self.model.load_state_dict(checkpoint['state_dict'])
 

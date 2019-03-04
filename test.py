@@ -25,6 +25,8 @@ def main(config, resume):
         training=False,
         num_workers=2
     )
+
+    # TODO :: use generic function for printing out model setting
     cp.print_progress('test DATASET\n', data_loader)
 
     # build model architecture

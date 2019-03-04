@@ -7,43 +7,53 @@ import data_loader as data_loaders
 import model as models
 import trainer.loss as loss_functions
 import trainer.metric as metric_functions
-from trainer import Trainer
+from trainer import Trainer, FineTuner
 
 import utils.util as util
 from utils import Logger
 from utils import color_print as cp
 
-def main(config, resume):
+def print_setting(data_loader, valid_data_loader, model, loss_fn, metrics, optimizer, lr_scheduler):
+    cp.print_progress('TRAIN DATASET\n', data_loader, 'size :', len(data_loader.dataset))
+
+    cp.print_progress('VALID DATASET\n', valid_data_loader, 'size :', len(valid_data_loader.dataset))
+
+    cp.print_progress('MODEL\n', model)
+
+    cp.print_progress('LOSS FUNCTION\n', loss_fn.__name__)
+
+    cp.print_progress('METRICS\n', [metric.__name__ for metric in metrics])
+
+    cp.print_progress('OPTIMIZER\n', optimizer)
+
+    cp.print_progress('LR_SCHEDULER\n', type(lr_scheduler).__name__)
+
+
+def train_base_model(config):
+    cp.print_progress('Training base model')
     train_logger = Logger()
 
     # setup data_loader instances
     data_loader = util.get_instance(data_loaders, 'data_loader', config)
-    cp.print_progress('TRAIN DATASET\n', data_loader)
-
     valid_data_loader = data_loader.split_validation()
-    cp.print_progress('VALID DATASET\n', valid_data_loader)
 
     # build model architecture
     model = util.get_instance(models, 'model', config)
-    cp.print_progress('MODEL\n', model)
 
     # get function handles of loss and metrics
     loss_fn = getattr(loss_functions, config['loss'])
-    cp.print_progress('LOSS FUNCTION\n', loss_fn.__name__)
-
     metrics = [getattr(metric_functions, met) for met in config['metrics']]
-    cp.print_progress('METRICS\n', [metric.__name__ for metric in metrics])
 
     # build optimizer, learning rate scheduler. delete every lines containing lr_scheduler for disabling scheduler
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = util.get_instance(torch.optim, 'optimizer', config, trainable_params)
-    cp.print_progress('OPTIMIZER\n', optimizer)
 
     lr_scheduler = util.get_instance(torch.optim.lr_scheduler, 'lr_scheduler', config, optimizer)
-    cp.print_progress('LR_SCHEDULER\n', type(lr_scheduler).__name__)
+
+    print_setting(data_loader, valid_data_loader, model, loss_fn, metrics,  optimizer, lr_scheduler)
 
     trainer = Trainer(model, loss_fn, metrics, optimizer,
-                      resume=resume,
+                      resume=None,
                       config=config,
                       data_loader=data_loader,
                       valid_data_loader=valid_data_loader,
@@ -54,28 +64,90 @@ def main(config, resume):
 
     trainer.train()
 
+    cp.print_progress('Training base model completed')
+
+    return os.path.join(trainer.checkpoint_dir, 'model_best.pth')
+
+def fine_tune_model(config, base_model, target_class):
+    cp.print_progress('Fine tune model with', target_class)
+
+    assert target_class and base_model
+    config['data_loader']['args']['target_class'] = target_class
+
+    train_logger = Logger()
+
+    # setup data_loader instances
+    data_loader = util.get_instance(data_loaders, 'data_loader', config)
+    valid_data_loader = data_loader.split_validation()
+
+    # build model architecture
+    model = util.get_instance(models, 'model', config)
+    model.swap_fc(len(target_class))
+    model.freeze()
+
+    # get function handles of loss and metrics
+    loss_fn = getattr(loss_functions, config['loss'])
+    metrics = [getattr(metric_functions, met) for met in config['metrics']]
+
+    # build optimizer, learning rate scheduler. delete every lines containing lr_scheduler for disabling scheduler
+    trainable_params = filter(lambda p: p.requires_grad, model.parameters())
+    optimizer = util.get_instance(torch.optim, 'optimizer', config, trainable_params)
+
+    lr_scheduler = util.get_instance(torch.optim.lr_scheduler, 'lr_scheduler', config, optimizer)
+
+    print_setting(data_loader, valid_data_loader, model, loss_fn, metrics,  optimizer, lr_scheduler)
+
+    # build base model
+    trainer = FineTuner(model, loss_fn, metrics, optimizer,
+                        base_model=base_model,
+                        config=config,
+                        data_loader=data_loader,
+                        valid_data_loader=valid_data_loader,
+                        lr_scheduler=lr_scheduler,
+                        train_logger=train_logger)
+
+    trainer.train()
+
+    cp.print_progress('Fine tuning is completed')
+
+    return os.path.join(trainer.checkpoint_dir, 'model_best.pth')
+
+def main(base_config, fine_tune_config, base_model):
+
+    if not base_model:
+        base_model = train_base_model(base_config)
+
+    target_class = [1,2]
+    fine_tune_config['trainer']['epochs'] += base_config['trainer']['epochs']
+    fine_tune_model(fine_tune_config, base_model, target_class)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='keyword spotting convrnn')
-    parser.add_argument('-c', '--config', default=None, type=str,
-                        help='config file path (default: None)')
-    parser.add_argument('-r', '--resume', default=None, type=str,
-                        help='path to latest checkpoint (default: None)')
+    parser.add_argument('-bc', '--base_config', default=None, type=str,
+                        help='base model config file path (default: None)')
+    parser.add_argument('-fc', '--fine_tune_config', default=None, type=str,
+                        help='fine tunning config file path (default: None)')
+    parser.add_argument('-b', '--base_model', default=None, type=str,
+                        help='path to base_model (default: None)')
     parser.add_argument('-d', '--device', default=None, type=str,
                         help='indices of GPUs to enable (default: all)')
     args = parser.parse_args()
 
-    if args.config:
+    if args.base_config:
         # load config file
-        config = json.load(open(args.config))
-        path = os.path.join(config['trainer']['save_dir'], config['name'])
-    elif args.resume:
-        # load config file from checkpoint, in case new config file is not given.
-        # Use '--config' and '--resume' arguments together to load trained model and train more with changed config.
-        config = torch.load(args.resume)['config']
+        base_config = json.load(open(args.base_config))
+        path = os.path.join(base_config['trainer']['save_dir'], base_config['name'])
+    elif args.base_model:
+        # load base_config file from base model checkpoint
+        base_config = torch.load(args.base_model)['config']
     else:
         raise AssertionError("Configuration file need to be specified. Add '-c config.json', for example.")
+
+    if args.fine_tune_config:
+        # load config file
+        fine_tune_config = json.load(open(args.fine_tune_config))
 
     if args.device:
         os.environ["CUDA_VISIBLE_DEVICES"] = args.device
 
-    main(config, args.resume)
+    main(base_config, fine_tune_config, args.base_model)
