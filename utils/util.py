@@ -1,7 +1,7 @@
 import errno
 import hashlib
 import os
-import tqdm
+from tqdm import tqdm
 
 def is_audio_file(file_name):
     return file_name.split('.')[-1] == "wav"

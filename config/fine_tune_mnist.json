@@ -5,7 +5,6 @@
     "model": {
         "type": "LeNet",
         "args": {
-          "num_classes" : 1
         }
     },
     "data_loader": {
@@ -38,7 +37,7 @@
         }
     },
     "trainer": {
-        "epochs": 10,
+        "epochs": 5,
         "save_dir": "saved/",
         "save_period": 1,
         "verbosity": 2,

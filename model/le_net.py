@@ -32,18 +32,24 @@ class LeNet(BaseModel):
 
     def swap_fc(self, num_classes, fc_id=None):
         self.__store_fcs__()
+
         if not fc_id:
             # new layers
             self.fc1 = nn.Linear(320, 50)
             self.fc2 = nn.Linear(50, num_classes)
-            self.__set_fc_id__()
+            fc_id = self.__set_fc_id__()
         else:
             self.__load_fcs__(fc_id)
 
+        return fc_id
+
     def __set_fc_id__(self):
-        self.fc1.id = self.swap_counter
-        self.fc2.id = self.swap_counter
+        fc_id = self.swap_counter
+        self.fc1.id = fc_id
+        self.fc2.id = fc_id
         self.swap_counter += 1
+        return fc_id
+
 
     def __store_fcs__(self):
         self.old_fcs[self.fc1.id] = {}

@@ -3,6 +3,7 @@ import numpy as np
 import torch
 from torchvision.utils import make_grid
 from base import BaseTrainer
+import utils.util as util
 
 
 class FineTuner(BaseTrainer):
@@ -12,35 +13,38 @@ class FineTuner(BaseTrainer):
     Note:
         Inherited from BaseTrainer.
     """
-    def __init__(self, model, loss, metrics, optimizer, base_model, config,
-                 data_loader, valid_data_loader=None, lr_scheduler=None, train_logger=None):
-        super(FineTuner, self).__init__(model, loss, metrics, optimizer, None, config, train_logger)
+    def __init__(self, model, loss, metrics, base_model, config,
+                 data_loader, target_class, valid_data_loader=None, train_logger=None):
+        super(FineTuner, self).__init__(model, loss, metrics, None, None, config, train_logger)
         self.config = config
         self.data_loader = data_loader
         self.valid_data_loader = valid_data_loader
         self.do_validation = self.valid_data_loader is not None
-        self.lr_scheduler = lr_scheduler
         self.log_step = int(np.sqrt(data_loader.batch_size))
 
         self.logger.info("Loading checkpoint: {} ...".format(base_model))
         checkpoint = torch.load(base_model)
         self.start_epoch = checkpoint['epoch'] + 1
 
-        # load model params from checkpoint.
-        if checkpoint['config']['model'] != self.config['model']:
-            self.logger.warning('Warning: Model configuration given in config file is different from that of checkpoint. ' + \
-                                'This may yield an exception while state_dict is being loaded.')
-
         # TODO :: play around with lr
         # print("lr steep", self.lr_scheduler.get_lr())
 
-        # knowledge transfer
-        # TODO :: cleann up the following code
-        param_to_keep = ['conv1.weight', 'conv1.bias', 'conv2.weight', 'conv2.bias']
+        model.state_dict().update(checkpoint['state_dict'])
+        self.fc_id = model.swap_fc(len(target_class) + 1)
 
-        pretrained_dict = {k: v for k, v in checkpoint['state_dict'].items() if k in param_to_keep}
+        # setup GPU device if available, move model into configured device
+        self.device, device_ids = self._prepare_device(config['n_gpu'])
+        self.model = model.to(self.device)
+        if len(device_ids) > 1:
+            self.model = torch.nn.DataParallel(model, device_ids=device_ids)
 
-        self.model.state_dict().update(pretrained_dict)
+        self.model.freeze()
+
+        # build optimizer, learning rate scheduler. delete every lines containing lr_scheduler for disabling scheduler
+        trainable_params = filter(lambda p: p.requires_grad, self.model.parameters())
+        self.optimizer = util.get_instance(torch.optim, 'optimizer', config, trainable_params)
+
+        self.lr_scheduler = util.get_instance(torch.optim.lr_scheduler, 'lr_scheduler', config, self.optimizer)
 
     def _eval_metrics(self, output, target):
         acc_metrics = np.zeros(len(self.metrics))

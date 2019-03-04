@@ -14,19 +14,19 @@ from utils import Logger
 from utils import color_print as cp
 
 def print_setting(data_loader, valid_data_loader, model, loss_fn, metrics, optimizer, lr_scheduler):
-    cp.print_progress('TRAIN DATASET\n', data_loader, 'size :', len(data_loader.dataset))
+    if data_loader: cp.print_progress('TRAIN DATASET\n', data_loader, 'size :', len(data_loader.dataset))
 
-    cp.print_progress('VALID DATASET\n', valid_data_loader, 'size :', len(valid_data_loader.dataset))
+    if valid_data_loader: cp.print_progress('VALID DATASET\n', valid_data_loader, 'size :', len(valid_data_loader.dataset))
 
-    cp.print_progress('MODEL\n', model)
+    if model: cp.print_progress('MODEL\n', model)
 
-    cp.print_progress('LOSS FUNCTION\n', loss_fn.__name__)
+    if loss_fn: cp.print_progress('LOSS FUNCTION\n', loss_fn.__name__)
 
-    cp.print_progress('METRICS\n', [metric.__name__ for metric in metrics])
+    if metrics: cp.print_progress('METRICS\n', [metric.__name__ for metric in metrics])
 
-    cp.print_progress('OPTIMIZER\n', optimizer)
+    if optimizer: cp.print_progress('OPTIMIZER\n', optimizer)
 
-    cp.print_progress('LR_SCHEDULER\n', type(lr_scheduler).__name__)
+    if lr_scheduler: cp.print_progress('LR_SCHEDULER\n', type(lr_scheduler).__name__)
 
 
 def train_base_model(config):
@@ -82,29 +82,21 @@ def fine_tune_model(config, base_model, target_class):
 
     # build model architecture
     model = util.get_instance(models, 'model', config)
-    model.swap_fc(len(target_class))
-    model.freeze()
 
     # get function handles of loss and metrics
     loss_fn = getattr(loss_functions, config['loss'])
     metrics = [getattr(metric_functions, met) for met in config['metrics']]
 
-    # build optimizer, learning rate scheduler. delete every lines containing lr_scheduler for disabling scheduler
-    trainable_params = filter(lambda p: p.requires_grad, model.parameters())
-    optimizer = util.get_instance(torch.optim, 'optimizer', config, trainable_params)
-
-    lr_scheduler = util.get_instance(torch.optim.lr_scheduler, 'lr_scheduler', config, optimizer)
-
-    print_setting(data_loader, valid_data_loader, model, loss_fn, metrics,  optimizer, lr_scheduler)
+    print_setting(data_loader, valid_data_loader, model, loss_fn, metrics,  None, None)
 
     # build base model
-    trainer = FineTuner(model, loss_fn, metrics, optimizer,
+    trainer = FineTuner(model, loss_fn, metrics,
                         base_model=base_model,
                         config=config,
                         data_loader=data_loader,
                         valid_data_loader=valid_data_loader,
-                        lr_scheduler=lr_scheduler,
-                        train_logger=train_logger)
+                        train_logger=train_logger,
+                        target_class=target_class)
 
     trainer.train()
 
