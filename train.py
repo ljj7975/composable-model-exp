@@ -1,3 +1,4 @@
+import copy
 import os
 import json
 import argparse
@@ -68,10 +69,10 @@ def train_base_model(config):
 
     return os.path.join(trainer.checkpoint_dir, 'model_best.pth')
 
-def fine_tune_model(config, base_model, target_class):
+def fine_tune_model(config, base_model):
+    target_class = config['target_class']
     cp.print_progress('Fine tune model with', target_class)
 
-    assert target_class and base_model
     config['data_loader']['args']['target_class'] = target_class
 
     train_logger = Logger()
@@ -100,18 +101,23 @@ def fine_tune_model(config, base_model, target_class):
 
     trainer.train()
 
-    cp.print_progress('Fine tuning is completed')
+    cp.print_progress('Fine tuning is completed for ', target_class)
 
     return os.path.join(trainer.checkpoint_dir, 'model_best.pth')
 
-def main(base_config, fine_tune_config, base_model):
+def main(base_config, fine_tune_config_template, base_model, target_class):
 
     if not base_model:
         base_model = train_base_model(base_config)
 
-    target_class = [1,2]
-    fine_tune_config['trainer']['epochs'] += base_config['trainer']['epochs']
-    fine_tune_model(fine_tune_config, base_model, target_class)
+    for target in target_class:
+        fine_tune_config = copy.deepcopy(fine_tune_config_template)
+
+        fine_tune_config['target_class'] = [target]
+
+        fine_tune_config['trainer']['epochs'] = fine_tune_config_template['trainer']['epochs'] + base_config['trainer']['epochs']
+
+        fine_tune_model(fine_tune_config, base_model)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='keyword spotting convrnn')
@@ -123,6 +129,8 @@ if __name__ == '__main__':
                         help='path to base_model (default: None)')
     parser.add_argument('-d', '--device', default=None, type=str,
                         help='indices of GPUs to enable (default: all)')
+    parser.add_argument('-t', '--target_class', nargs='+', type=int,
+                        help="target class to fine tune (default: all 10 classes)", default=[1,2,3,4,5,6,7,8,9,10])
     args = parser.parse_args()
 
     if args.base_config:
@@ -137,9 +145,9 @@ if __name__ == '__main__':
 
     if args.fine_tune_config:
         # load config file
-        fine_tune_config = json.load(open(args.fine_tune_config))
+        fine_tune_config_template = json.load(open(args.fine_tune_config))
 
     if args.device:
         os.environ["CUDA_VISIBLE_DEVICES"] = args.device
 
-    main(base_config, fine_tune_config, args.base_model)
+    main(base_config, fine_tune_config_template, args.base_model, args.target_class)

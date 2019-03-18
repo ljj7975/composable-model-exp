@@ -1,11 +1,10 @@
 {
-    "name": "Mnist_LeNet",
+    "name": "mnist_base",
     "n_gpu": 1,
 
     "model": {
         "type": "LeNet",
-        "args": {
-        }
+        "args": {}
     },
     "data_loader": {
         "type": "MnistDataLoader",
@@ -27,7 +26,7 @@
     },
     "loss": "nll_loss",
     "metrics": [
-        "pred_acc"
+        "pred_acc", "top_pred_acc"
     ],
     "lr_scheduler": {
         "type": "StepLR",
