@@ -60,7 +60,9 @@ def main(config, resume, fine_tuned_model_dir, target_class):
         shuffle=False,
         validation_split=0.0,
         training=False,
-        num_workers=2
+        num_workers=2,
+        target_class=target_class,
+        keep_unknown=False
     )
 
     # get function handles of loss and metrics

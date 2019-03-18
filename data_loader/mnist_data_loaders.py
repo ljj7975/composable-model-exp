@@ -1,34 +1,54 @@
 from torchvision import transforms
-# from .mnist_dataset import MNIST
+from .mnist_dataset import MNIST
 from torchvision import datasets
 from base import BaseDataLoader
 import torch
 
 class MnistDataLoader(BaseDataLoader):
-    def __init__(self, data_dir, batch_size, shuffle, validation_split, num_workers, training=True, target_class=None):
+    def __init__(self, data_dir, batch_size, shuffle, validation_split, num_workers, training=True, target_class=None, keep_unknown=True):
         trsfm = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize((0.1307,), (0.3081,))
             ])
         self.data_dir = data_dir
         self.target_class = target_class
-        # self.dataset = MNIST(
-        #     self.data_dir,
-        #     target_class=target_class,
-        #     train=training,
-        #     download=True,
-        #     transform=trsfm)
-
-        self.dataset = datasets.MNIST(self.data_dir, train=training, download=True, transform=trsfm)
+        self.keep_unknown = keep_unknown
 
         if self.target_class:
-            super(MnistDataLoader, self).__init__(
-                self.dataset,
-                batch_size, shuffle,
-                validation_split,
-                num_workers,
-                collate_fn = self.__collate_fn__)
+            if self.keep_unknown:
+                self.dataset = datasets.MNIST(
+                    self.data_dir,
+                    train=training,
+                    download=True,
+                    transform=trsfm)
+
+                super(MnistDataLoader, self).__init__(
+                    self.dataset,
+                    batch_size, shuffle,
+                    validation_split,
+                    num_workers,
+                    collate_fn = self.__collate_fn__)
+            else:
+                self.dataset = MNIST(
+                    self.data_dir,
+                    target_class=target_class,
+                    train=training,
+                    download=True,
+                    transform=trsfm)
+
+                super(MnistDataLoader, self).__init__(
+                    self.dataset,
+                    batch_size, shuffle,
+                    validation_split,
+                    num_workers,
+                    collate_fn = self.__collate_fn__)
         else:
+            self.dataset = datasets.MNIST(
+                self.data_dir,
+                train=training,
+                download=True,
+                transform=trsfm)
+
             super(MnistDataLoader, self).__init__(
                 self.dataset,
                 batch_size, shuffle,
