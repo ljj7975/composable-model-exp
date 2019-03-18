@@ -1,6 +1,5 @@
 import importlib
 
-
 class WriterTensorboardX():
     def __init__(self, writer_dir, logger, enable):
         self.writer = None

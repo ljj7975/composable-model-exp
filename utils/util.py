@@ -2,6 +2,7 @@ import errno
 import hashlib
 import os
 from tqdm import tqdm
+from utils import color_print as cp
 
 def is_audio_file(file_name):
     return file_name.split('.')[-1] == "wav"
@@ -47,7 +48,6 @@ def check_integrity(fpath, md5=None):
         return False
     return True
 
-
 def download_url(url, root, filename=None, md5=None):
     """Download a file from a url and place it in root.
     Args:
@@ -84,3 +84,18 @@ def download_url(url, root, filename=None, md5=None):
                     url, fpath,
                     reporthook=gen_bar_updater()
                 )
+
+def print_setting(data_loader, valid_data_loader, model, loss_fn, metrics, optimizer, lr_scheduler):
+    if data_loader: cp.print_progress('TRAIN DATASET\n', data_loader, 'size :', len(data_loader.dataset))
+
+    if valid_data_loader: cp.print_progress('VALID DATASET\n', valid_data_loader, 'size :', len(valid_data_loader.dataset))
+
+    if model: cp.print_progress('MODEL\n', model)
+
+    if loss_fn: cp.print_progress('LOSS FUNCTION\n', loss_fn.__name__)
+
+    if metrics: cp.print_progress('METRICS\n', [metric.__name__ for metric in metrics])
+
+    if optimizer: cp.print_progress('OPTIMIZER\n', optimizer)
+
+    if lr_scheduler: cp.print_progress('LR_SCHEDULER\n', type(lr_scheduler).__name__)

@@ -30,12 +30,14 @@ class LeNet(BaseModel):
         for param in self.conv2.parameters():
             param.requires_grad = False
 
+        for param in self.fc1.parameters():
+            param.requires_grad = False
+
     def swap_fc(self, num_classes, fc_id=None):
         self.__store_fcs__()
 
         if not fc_id:
             # new layers
-            self.fc1 = nn.Linear(320, 50)
             self.fc2 = nn.Linear(50, num_classes)
             fc_id = self.__set_fc_id__()
         else:
@@ -45,18 +47,15 @@ class LeNet(BaseModel):
 
     def __set_fc_id__(self):
         fc_id = self.swap_counter
-        self.fc1.id = fc_id
         self.fc2.id = fc_id
         self.swap_counter += 1
         return fc_id
 
 
     def __store_fcs__(self):
-        self.old_fcs[self.fc1.id] = {}
-        self.old_fcs[self.fc1.id]['fc1'] = self.fc1
-        self.old_fcs[self.fc1.id]['fc2'] = self.fc2
+        self.old_fcs[self.fc2.id] = {}
+        self.old_fcs[self.fc2.id]['fc2'] = self.fc2
 
     def __load_fcs__(self, fc_id):
         assert self.old_fcs[fc_id]
-        self.fc1 = self.old_fcs[fc_id]['fc1']
         self.fc2 = self.old_fcs[fc_id]['fc2']

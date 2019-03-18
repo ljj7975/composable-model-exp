@@ -50,7 +50,7 @@ class BaseTrainer:
         start_time = datetime.datetime.now().strftime('%m%d_%H%M%S')
 
         self.checkpoint_dir = os.path.join(cfg_trainer['save_dir'], config['name'], start_time)
-        if config['target_class']:
+        if 'target_class' in config:
             target_folder = '_'.join(str(e) for e in config['target_class'])
             self.checkpoint_dir = os.path.join(cfg_trainer['save_dir'], config['name'], target_folder, start_time)
 
