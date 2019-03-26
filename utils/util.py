@@ -86,16 +86,16 @@ def download_url(url, root, filename=None, md5=None):
                 )
 
 def print_setting(data_loader, valid_data_loader, model, loss_fn, metrics, optimizer, lr_scheduler):
-    if data_loader: cp.print_progress('TRAIN DATASET\n', data_loader, 'size :', len(data_loader.dataset))
+    if data_loader: cp.print_bold('TRAIN DATASET\n', data_loader, 'size :', len(data_loader.dataset))
 
-    if valid_data_loader: cp.print_progress('VALID DATASET\n', valid_data_loader, 'size :', len(valid_data_loader.dataset))
+    if valid_data_loader: cp.print_bold('VALID DATASET\n', valid_data_loader, 'size :', len(valid_data_loader.dataset))
 
-    if model: cp.print_progress('MODEL\n', model)
+    if model: cp.print_bold('MODEL\n', model)
 
-    if loss_fn: cp.print_progress('LOSS FUNCTION\n', loss_fn.__name__)
+    if loss_fn: cp.print_bold('LOSS FUNCTION\n', loss_fn.__name__)
 
-    if metrics: cp.print_progress('METRICS\n', [metric.__name__ for metric in metrics])
+    if metrics: cp.print_bold('METRICS\n', [metric.__name__ for metric in metrics])
 
-    if optimizer: cp.print_progress('OPTIMIZER\n', optimizer)
+    if optimizer: cp.print_bold('OPTIMIZER\n', optimizer)
 
-    if lr_scheduler: cp.print_progress('LR_SCHEDULER\n', type(lr_scheduler).__name__)
+    if lr_scheduler: cp.print_bold('LR_SCHEDULER\n', type(lr_scheduler).__name__)

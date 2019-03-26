@@ -11,13 +11,13 @@ import trainer.metric as metric_functions
 import utils.util as util
 from utils import color_print as cp
 
-def main(config, resume, fine_tuned_model_dir, target_class):
+def main(config, base_model, fine_tuned_model_dir, target_class):
 
     # build model architecture
     model = util.get_instance(models, 'model', config)
 
     # load state dict
-    checkpoint = torch.load(resume)
+    checkpoint = torch.load(base_model)
     state_dict = checkpoint['state_dict']
 
     if config['n_gpu'] > 1:
@@ -68,6 +68,8 @@ def main(config, resume, fine_tuned_model_dir, target_class):
     # get function handles of loss and metrics
     loss_fn = getattr(loss_functions, config['loss'])
 
+    config['metrics'] = ["pred_acc"]
+
     metrics = [getattr(metric_functions, met) for met in config['metrics']]
 
     util.print_setting(data_loader, None, model, loss_fn, metrics,  None, None)
@@ -100,8 +102,8 @@ def main(config, resume, fine_tuned_model_dir, target_class):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PyTorch Template')
 
-    parser.add_argument('-r', '--resume', default=None, type=str,
-                        help='path to latest checkpoint (default: None)')
+    parser.add_argument('-b', '--base_model', default=None, type=str,
+                        help='path to base model checkpoint (default: None)')
     parser.add_argument('-d', '--device', default=None, type=str,
                         help='indices of GPUs to enable (default: all)')
     parser.add_argument('-ft', '--fine_tuned_model_dir', type=str,
@@ -112,9 +114,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if args.resume:
-        config = torch.load(args.resume)['config']
+    if args.base_model:
+        config = torch.load(args.base_model)['config']
     if args.device:
         os.environ["CUDA_VISIBLE_DEVICES"]=args.device
 
-    main(config, args.resume, args.fine_tuned_model_dir, args.target_class)
+    main(config, args.base_model, args.fine_tuned_model_dir, args.target_class)
