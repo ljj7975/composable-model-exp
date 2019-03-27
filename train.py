@@ -114,7 +114,8 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--device', default=None, type=str,
                         help='indices of GPUs to enable (default: all)')
     parser.add_argument('-t', '--target_class', nargs='+', type=int,
-                        help="target class to fine tune (default: all 10 classes)", default=[1,2,3,4,5,6,7,8,9,10])
+                        help="target class to fine tune (default: all 10 classes)",
+                        default=[0,1,2,3,4,5,6,7,8,9])
     args = parser.parse_args()
 
     if args.base_config:

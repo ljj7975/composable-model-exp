@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from base import BaseModel
@@ -21,7 +22,7 @@ class LeNet(BaseModel):
         x = F.relu(self.fc1(x))
         x = F.dropout(x, training=self.training)
         x = self.fc2(x)
-        return F.log_softmax(x, dim=1)
+        return torch.sigmoid(x)
 
     def freeze(self):
         for param in self.conv1.parameters():

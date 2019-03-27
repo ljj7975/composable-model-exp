@@ -7,6 +7,12 @@ exploring variations of convrnn for keyword spotting task
 python train.py -bc config/mnist_base.json -fc config/mnist_fine_tune.json
 ```
 
+## finetune model
+
+```
+python train.py -b saved/mnist_base/0326_174207/model_best.pth -fc config/mnist_fine_tune.json -t 1
+```
+
 ## evaluation model
 
 ```

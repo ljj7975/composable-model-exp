@@ -25,7 +25,7 @@
             "amsgrad": true
         }
     },
-    "loss": "nll_loss",
+    "loss": "cross_entropy_loss",
     "metrics": [
         "pred_acc"
     ],
