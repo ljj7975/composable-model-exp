@@ -58,6 +58,7 @@ def fine_tune_model(config, base_model):
     cp.print_progress('Fine tune model with', target_class)
 
     config['data_loader']['args']['target_class'] = target_class
+    config['data_loader']['args']['unknown'] = True
 
     train_logger = Logger()
 
@@ -90,7 +91,6 @@ def fine_tune_model(config, base_model):
     return os.path.join(trainer.checkpoint_dir, 'model_best.pth')
 
 def main(base_config, fine_tune_config_template, base_model, target_class):
-
     if not base_model:
         base_model = train_base_model(base_config)
 
