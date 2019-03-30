@@ -24,12 +24,15 @@ class FineTuner(BaseTrainer):
 
         self.logger.info("Loading checkpoint: {} ...".format(base_model))
         checkpoint = torch.load(base_model)
+
         self.start_epoch = checkpoint['epoch'] + 1
 
         # TODO :: play around with lr
         # print("lr steep", self.lr_scheduler.get_lr())
 
-        model.state_dict().update(checkpoint['state_dict'])
+        model.load_state_dict(checkpoint['state_dict'])
+
+        self.target_class = target_class
         self.fc_id = model.swap_fc(len(target_class) + 1)
 
         # setup GPU device if available, move model into configured device
@@ -42,6 +45,7 @@ class FineTuner(BaseTrainer):
 
         # build optimizer, learning rate scheduler. delete every lines containing lr_scheduler for disabling scheduler
         trainable_params = filter(lambda p: p.requires_grad, self.model.parameters())
+
         self.optimizer = util.get_instance(torch.optim, 'optimizer', config, trainable_params)
 
         self.lr_scheduler = util.get_instance(torch.optim.lr_scheduler, 'lr_scheduler', config, self.optimizer)
@@ -74,11 +78,12 @@ class FineTuner(BaseTrainer):
         total_loss = 0
         total_metrics = np.zeros(len(self.metrics))
         for batch_idx, (data, target) in enumerate(self.data_loader):
-            data, target = data.to(self.device), target.to(self.device)
+            one_hot_target = torch.eye(self.model.output_size)[target]
+            data, target, one_hot_target = data.to(self.device), target.to(self.device), one_hot_target.to(self.device)
 
             self.optimizer.zero_grad()
             output = self.model(data)
-            loss = self.loss(output, target)
+            loss = self.loss(output, one_hot_target)
             loss.backward()
             self.optimizer.step()
 
@@ -124,10 +129,11 @@ class FineTuner(BaseTrainer):
         total_val_metrics = np.zeros(len(self.metrics))
         with torch.no_grad():
             for batch_idx, (data, target) in enumerate(self.valid_data_loader):
-                data, target = data.to(self.device), target.to(self.device)
+                one_hot_target = torch.eye(self.model.output_size)[target]
+                data, target, one_hot_target = data.to(self.device), target.to(self.device), one_hot_target.to(self.device)
 
                 output = self.model(data)
-                loss = self.loss(output, target)
+                loss = self.loss(output, one_hot_target)
 
                 self.writer.set_step((epoch - 1) * len(self.valid_data_loader) + batch_idx, 'valid')
                 self.writer.add_scalar('loss', loss.item())

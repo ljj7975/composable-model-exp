@@ -20,12 +20,12 @@
     "optimizer": {
         "type": "Adam",
         "args":{
-            "lr": 0.1,
+            "lr": 0.001,
             "weight_decay": 0,
             "amsgrad": true
         }
     },
-    "loss": "cross_entropy_loss",
+    "loss": "bce_logits_loss",
     "metrics": [
         "pred_acc"
     ],
@@ -37,7 +37,7 @@
         }
     },
     "trainer": {
-        "epochs": 10,
+        "epochs": 5,
         "save_dir": "saved/",
         "save_period": 1,
         "verbosity": 2,

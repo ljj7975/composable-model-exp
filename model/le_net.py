@@ -6,6 +6,7 @@ from base import BaseModel
 class LeNet(BaseModel):
     def __init__(self, num_classes=10):
         super(LeNet, self).__init__()
+        self.output_size = num_classes
         self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
         self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
         self.conv2_drop = nn.Dropout2d()
@@ -22,7 +23,7 @@ class LeNet(BaseModel):
         x = F.relu(self.fc1(x))
         x = F.dropout(x, training=self.training)
         x = self.fc2(x)
-        return torch.sigmoid(x)
+        return x
 
     def freeze(self):
         for param in self.conv1.parameters():
@@ -43,6 +44,8 @@ class LeNet(BaseModel):
             fc_id = self.__set_fc_id__()
         else:
             self.__load_fcs__(fc_id)
+
+        self.output_size = self.fc2.out_features
 
         return fc_id
 

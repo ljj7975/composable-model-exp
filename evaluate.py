@@ -32,7 +32,7 @@ def main(config, base_model, fine_tuned_model_dir, target_class):
         dir_path = os.path.join(fine_tuned_model_dir, str(target))
         trained_models = os.listdir(dir_path)
 
-        latest_best_model = os.path.join(dir_path, max(trained_models), "model_best.pth");
+        latest_best_model = os.path.join(dir_path, max(trained_models), "model_best.pth")
 
         checkpoint = torch.load(latest_best_model)
         state_dict = checkpoint['state_dict']
@@ -43,7 +43,7 @@ def main(config, base_model, fine_tuned_model_dir, target_class):
     weight = torch.stack(weight_list)
     bias = torch.stack(bias_list)
 
-    layer_id = model.swap_fc(len(target_class))
+    model.swap_fc(len(target_class))
 
     model.fc2.weight = torch.nn.Parameter(weight)
     model.fc2.bias = torch.nn.Parameter(bias)
@@ -62,7 +62,7 @@ def main(config, base_model, fine_tuned_model_dir, target_class):
         training=False,
         num_workers=2,
         target_class=target_class,
-        keep_unknown=False
+        unknown=False
     )
 
     # get function handles of loss and metrics
@@ -77,13 +77,16 @@ def main(config, base_model, fine_tuned_model_dir, target_class):
     total_loss = 0.0
     total_metrics = torch.zeros(len(metrics))
 
+
     with torch.no_grad():
         for i, (data, target) in enumerate(tqdm(data_loader)):
-            data, target = data.to(device), target.to(device)
+            one_hot_target = torch.eye(model.output_size)[target]
+
+            data, target, one_hot_target = data.to(device), target.to(device), one_hot_target.to(device)
             output = model(data)
 
             # computing loss, metrics on test set
-            loss = loss_fn(output, target)
+            loss = loss_fn(output, one_hot_target)
             batch_size = data.shape[0]
             total_loss += loss.item() * batch_size
             for i, metric in enumerate(metrics):
