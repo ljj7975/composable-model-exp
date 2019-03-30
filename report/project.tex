@@ -1,0 +1,104 @@
+\documentclass{article}
+\usepackage[nonatbib]{np}
+
+\usepackage[breaklinks=true,letterpaper=true,colorlinks,citecolor=black,bookmarks=false]{hyperref}
+
+\usepackage{amsthm}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+
+\usepackage[sort&compress,numbers]{natbib}
+\usepackage[normalem]{ulem}
+
+% use Times
+\usepackage{times}
+% For figures
+\usepackage{graphicx} % more modern
+%\usepackage{epsfig} % less modern
+%\usepackage{subfig} 
+
+\graphicspath{{../fig/}}
+
+\usepackage{tikz}
+\usepackage{tkz-tab}
+\usepackage{caption} 
+\usepackage{subcaption} 
+\usetikzlibrary{shapes.geometric, arrows}
+\tikzstyle{arrow} = [very thick,->,>=stealth]
+
+\usepackage{cleveref}
+\usepackage{setspace}
+\usepackage{wrapfig}
+%\usepackage[ruled]{algorithm}
+\usepackage{algpseudocode}
+\usepackage[noend,linesnumbered]{algorithm2e}
+
+\usepackage[disable]{todonotes}
+
+\usepackage{algpseudocode}
+
+\title{Dynamic Model Construction for Efficient Classification}
+
+\author{
+	Jaejun Lee \\
+	School of Computer Science\\
+	University of Waterloo\\
+	Waterloo, ON, N2L 3G1 \\
+	\texttt{j474lee@uwaterloo.ca} \\
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract} 
+Put here a brief summary of the project: what is it about, what are the related works, what is your execution plan, what do you expect to learn/contribute, and how are you going to evaluate your results. The proposal is expected to be 1 page (reference excluded), so be concise and to the point.
+\end{abstract} 
+
+\section{Introduction}
+In this section you are going to present a brief background and motivation of your project. Why is it interesting/significant? How does it relate to the course?
+
+\section{Related Works}
+
+\subsection{Ensemble Learning}
+
+\subsection{Multi-task Learning}
+
+\subsection{Transfer Learning}
+
+\section{Proposed Works}
+
+similar idea has been proposed to share most of the compuations where separate fc layers has been proposed
+
+taking the same idea, train on individual class, load the weight to construct the target
+
+
+
+\section{Activation and Loss}
+Perform an initial review of relevant literature. Has your problem, or one of similar nature, been considered before? By whom? What are the differences or limitations (if any)?
+
+\section{Experiments}
+
+\subsection{implementation}
+
+\subsection{results}
+Perform an initial review of relevant literature. Has your problem, or one of similar nature, been considered before? By whom? What are the differences or limitations (if any)?
+
+\subsection{computational efficiency}
+Perform an initial review of relevant literature. Has your problem, or one of similar nature, been considered before? By whom? What are the differences or limitations (if any)?
+
+\section{Conclusion}
+In this section please concisely describe what you are going to achieve in this project. E.g., formulate your problem precisely (mathematically), present the technical challenges (if any), discuss the tools or datasets that you will build on, state your goals, and come up with a plan for evaluation.
+
+For your own sake, you might want to lay out a time line, so that you can keep a good track of your project.
+
+\newpage
+
+\section*{Acknowledgement}
+Thank people who have helped or influenced you in this project.
+
+\nocite{*}
+
+\bibliographystyle{unsrtnat}
+\bibliography{project}
+
+\end{document}
