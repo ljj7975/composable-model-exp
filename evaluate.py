@@ -11,72 +11,14 @@ import trainer.metric as metric_functions
 import utils.util as util
 from utils import color_print as cp
 
-def main(config, base_model, fine_tuned_model_dir, target_class):
-
-    # build model architecture
-    model = util.get_instance(models, 'model', config)
-
-    # load state dict
-    checkpoint = torch.load(base_model)
-    state_dict = checkpoint['state_dict']
-
-    if config['n_gpu'] > 1:
-        model = torch.nn.DataParallel(model)
-
-    model.load_state_dict(state_dict)
-
-    weight_list = []
-    bias_list = []
-    for target in target_class:
-
-        dir_path = os.path.join(fine_tuned_model_dir, str(target))
-        trained_models = os.listdir(dir_path)
-
-        latest_best_model = os.path.join(dir_path, max(trained_models), "model_best.pth")
-
-        checkpoint = torch.load(latest_best_model)
-        state_dict = checkpoint['state_dict']
-
-        weight_list.append(state_dict["fc2.weight"][0])
-        bias_list.append(state_dict["fc2.bias"][0])
-
-    weight = torch.stack(weight_list)
-    bias = torch.stack(bias_list)
-
-    model.swap_fc(len(target_class))
-
-    model.fc2.weight = torch.nn.Parameter(weight)
-    model.fc2.bias = torch.nn.Parameter(bias)
-
+def evaluate(model, data_loader, loss_fn, metrics):
     # prepare model for testing
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
     model.eval()
 
-    # setup data_loader instances
-    data_loader = getattr(data_loaders, config['data_loader']['type'])(
-        config['data_loader']['args']['data_dir'],
-        batch_size=512,
-        shuffle=False,
-        validation_split=0.0,
-        training=False,
-        num_workers=2,
-        target_class=target_class,
-        unknown=False
-    )
-
-    # get function handles of loss and metrics
-    loss_fn = getattr(loss_functions, config['loss'])
-
-    config['metrics'] = ["pred_acc"]
-
-    metrics = [getattr(metric_functions, met) for met in config['metrics']]
-
-    util.print_setting(data_loader, None, model, loss_fn, metrics,  None, None)
-
     total_loss = 0.0
     total_metrics = torch.zeros(len(metrics))
-
 
     with torch.no_grad():
         for i, (data, target) in enumerate(tqdm(data_loader)):
@@ -101,6 +43,77 @@ def main(config, base_model, fine_tuned_model_dir, target_class):
         test_result_str += ('\t' + str(key) + ' : ' + str(val) + '\n')
 
     cp.print_progress(test_result_str)
+
+    return log
+
+def main(config, base_model, fine_tuned_model_dir, target_class):
+
+    # build model architecture
+    model = util.get_instance(models, 'model', config)
+
+    # load state dict
+    checkpoint = torch.load(base_model)
+    state_dict = checkpoint['state_dict']
+
+    if config['n_gpu'] > 1:
+        model = torch.nn.DataParallel(model)
+
+    model.load_state_dict(state_dict)
+
+    # setup data_loader instances
+    data_loader = getattr(data_loaders, config['data_loader']['type'])(
+        config['data_loader']['args']['data_dir'],
+        batch_size=512,
+        shuffle=False,
+        validation_split=0.0,
+        training=False,
+        num_workers=2,
+        target_class=target_class,
+        unknown=False
+    )
+
+    # get function handles of loss and metrics
+    loss_fn = getattr(loss_functions, config['loss'])
+
+    config['metrics'] = ["pred_acc"]
+
+    metrics = [getattr(metric_functions, met) for met in config['metrics']]
+
+    if len(target_class) == 10:
+        cp.print_progress("< Base Model >")
+        util.print_setting(data_loader, None, model, loss_fn, metrics, None, None)
+
+        base_model_evaluation = evaluate(model, data_loader, loss_fn, metrics)
+
+    weight_list = []
+    bias_list = []
+    for target in target_class:
+
+        dir_path = os.path.join(fine_tuned_model_dir, str(target))
+        trained_models = os.listdir(dir_path)
+
+        latest_best_model = os.path.join(dir_path, max(trained_models), "model_best.pth")
+
+        checkpoint = torch.load(latest_best_model)
+        state_dict = checkpoint['state_dict']
+
+        weight_list.append(state_dict["fc2.weight"][0])
+        bias_list.append(state_dict["fc2.bias"][0])
+
+    weight = torch.stack(weight_list)
+    bias = torch.stack(bias_list)
+
+    model.swap_fc(len(target_class))
+
+    model.fc2.weight = torch.nn.Parameter(weight)
+    model.fc2.bias = torch.nn.Parameter(bias)
+
+    cp.print_progress("< Combined Model >")
+
+    util.print_setting(data_loader, None, model, loss_fn, metrics, None, None)
+
+    combined_model_evaluation = evaluate(model, data_loader, loss_fn, metrics)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PyTorch Template')
