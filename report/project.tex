@@ -51,7 +51,9 @@
 \maketitle
 
 \begin{abstract} 
-Put here a brief summary of the project: what is it about, what are the related works, what is your execution plan, what do you expect to learn/contribute, and how are you going to evaluate your results. The proposal is expected to be 1 page (reference excluded), so be concise and to the point.
+
+One of the major drawback of neural network in the domain of classification is that retraining is unavoidable when the target set of class changes. For this reason, networks are often designed to be wide and deep. However, this leads to increase the necessary computations which has a direct impact on the efficiency of the model. In this work, I study how different combination of loss function and last activation function affects the classification output and present a new way to add or remove a class from target class set without retrianing. With this technique, a model can be adjusted to classify any combination of target classes and the minimal resource usage is guaranteed as the adjusted model involves the same amount of computations as the model trained to classify the same set of class explicitly.
+
 \end{abstract} 
 
 \section{Introduction}
@@ -75,6 +77,8 @@ taking the same idea, train on individual class, load the weight to construct th
 
 \section{Activation and Loss}
 Perform an initial review of relevant literature. Has your problem, or one of similar nature, been considered before? By whom? What are the differences or limitations (if any)?
+
+\subsection{How many class can it predict}
 
 \section{Experiments}
 
