@@ -15,14 +15,14 @@
 % For figures
 \usepackage{graphicx} % more modern
 %\usepackage{epsfig} % less modern
-%\usepackage{subfig} 
+%\usepackage{subfig}
 
 \graphicspath{{../fig/}}
 
 \usepackage{tikz}
 \usepackage{tkz-tab}
-\usepackage{caption} 
-\usepackage{subcaption} 
+\usepackage{caption}
+\usepackage{subcaption}
 \usetikzlibrary{shapes.geometric, arrows}
 \tikzstyle{arrow} = [very thick,->,>=stealth]
 
@@ -50,22 +50,32 @@
 \begin{document}
 \maketitle
 
-\begin{abstract} 
+\begin{abstract}
 
-One of the major drawback of neural network in the domain of classification is that retraining is unavoidable when the target set of class changes. For this reason, networks are often designed to be wide and deep. However, this leads to increase the necessary computations which has a direct impact on the efficiency of the model. In this work, I study how different combination of loss function and last activation function affects the classification output and present a new way to add or remove a class from target class set without retrianing. With this technique, a model can be adjusted to classify any combination of target classes and the minimal resource usage is guaranteed as the adjusted model involves the same amount of computations as the model trained to classify the same set of class explicitly.
+One of the major drawback of neural network in the domain of classification is that retraining is unavoidable when the target set of class changes. For this reason, networks are often designed to be wide and deep. However, this leads to increase the necessary computations which has a direct impact on the efficiency of the model. In this work, I study how different combination of loss function and last activation function affects the classification output and present a new way to add or remove a class from target class set without retraining. With this technique, a model can be adjusted to classify any combination of target classes and the minimal resource usage is guaranteed as the adjusted model involves the same amount of computations as the model trained to classify the same set of class explicitly.
 
-\end{abstract} 
+\end{abstract}
 
 \section{Introduction}
+
+Current issues
+
+
 In this section you are going to present a brief background and motivation of your project. Why is it interesting/significant? How does it relate to the course?
 
 \section{Related Works}
 
+The main challenge with this problem is on model flexibility and resource usage. Even though these two aspects are quite related, they are generally considered separately. Therefore, this problem can be categorized differently depending on which direction one approaches. The three most related domains are: ensemble learning, multi-task learning, and transfer learning
+
 \subsection{Ensemble Learning}
+Ensemble learning refers to combining outputs from multiple models to generate a single output. Ensemble learning is a common technique in the field of machine learning. The most famous techniques include voting, weighting, bagging and boosting~\cite{dietterich2000ensemble, breiman1996bagging, freund1996experiments}. Even though ensemble learning has clear advantage of being easy to implement, it assumes that the models participating have different architecture. As a result, ensemble learning often requires significant computations as each model processes the given input independently.
 
 \subsection{Multi-task Learning}
+On the other hand, multi-task learning are considered to be more relevant as it involves combining multiple models into a single model. The key assumption is that tasks that each model is designed for, are related. Therefore, sharing information throughout training will lead to increase in performance for each task. There are numbers of different techniques varying on how to share and how much to share among tasks. Two most common approaches are parameter sharing and feature sharing~\cite{ruder2017overview, Caruana1993MultitaskLA, duong2015low, lu2017fully}. Even with the similarity in architecture, multi-task learning is still quite different from our problem, as it still assumes the models for each task have different architecture.
 
 \subsection{Transfer Learning}
+
+Transfer learning shares the same assumption with multi-task learning; two tasks are related and knowledge share can improve the performance. However, the key difference between two problem is that transfer learning are designed to share the same model for different tasks. First, the model is pre-trained with different tasks and learns to select important features. Then the model is fine-tuned for the target task, putting all of its effort to achieve the target task with selected features~\cite{yosinski2014transferable}. It is found that transfer learning is quite powerful and applicable in various domains~\cite{raina2007self, egan2004effects, glorot2011domain}.
 
 \section{Proposed Works}
 
@@ -103,6 +113,6 @@ Thank people who have helped or influenced you in this project.
 \nocite{*}
 
 \bibliographystyle{unsrtnat}
-\bibliography{project}
+\bibliography{citation}
 
 \end{document}
