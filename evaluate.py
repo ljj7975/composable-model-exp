@@ -29,6 +29,7 @@ def evaluate(model, data_loader, loss_fn, metrics):
 
             # computing loss, metrics on test set
             loss = loss_fn(output, one_hot_target)
+            # loss = loss_fn(output, target)
             batch_size = data.shape[0]
             total_loss += loss.item() * batch_size
             for i, metric in enumerate(metrics):

@@ -55,6 +55,7 @@ class Trainer(BaseTrainer):
             self.optimizer.zero_grad()
             output = self.model(data)
             loss = self.loss(output, one_hot_target)
+            # loss = self.loss(output, target)
             loss.backward()
             self.optimizer.step()
 
@@ -105,6 +106,7 @@ class Trainer(BaseTrainer):
 
                 output = self.model(data)
                 loss = self.loss(output, one_hot_target)
+                # loss = self.loss(output, target)
 
                 self.writer.set_step((epoch - 1) * len(self.valid_data_loader) + batch_idx, 'valid')
                 self.writer.add_scalar('loss', loss.item())
