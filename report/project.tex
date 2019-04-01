@@ -65,7 +65,7 @@ In this section you are going to present a brief background and motivation of yo
 
 \section{Related Works}
 
-The main challenge with this problem is on model flexibility and resource usage. Even though these two aspects are quite related, they are generally considered separately. Therefore, this problem can be categorized differently depending on which direction one approaches. The three most related domains are: ensemble learning, multi-task learning, and transfer learning
+The main challenge with this problem is on model flexibility and resource usage. Even though these two aspects are quite related, they are generally considered as two separate problem. As a result, this problem can be categorized differently depending on which direction one approaches. The three most related domains are: ensemble learning, multi-task learning, and transfer learning
 
 \subsection{Ensemble Learning}
 Ensemble learning refers to combining outputs from multiple models to generate a single output. Ensemble learning is a common technique in the field of machine learning. The most famous techniques include voting, weighting, bagging and boosting~\cite{dietterich2000ensemble, breiman1996bagging, freund1996experiments}. Even though ensemble learning has clear advantage of being easy to implement, it assumes that the models participating have different architecture. As a result, ensemble learning often requires significant computations as each model processes the given input independently.
@@ -79,13 +79,52 @@ Transfer learning shares the same assumption with multi-task learning; two tasks
 
 \section{Proposed Works}
 
-similar idea has been proposed to share most of the compuations where separate fc layers has been proposed
+% \begin{figure*}[t]
+%     \centering
+%     \begin{subfigure}[b]{.3\linewidth}
+%         \centering
+%         \includegraphics[scale=0.48,trim={0mm 1.6mm 0mm 0mm},clip]{learning_rate.png}
+%     \end{subfigure}%
+%     \begin{subfigure}[b]{.3\linewidth}
+%         \centering
+%         \includegraphics[scale=0.48,trim={0mm 1.6mm 0mm 0mm},clip]{epoch.png}
+%     \end{subfigure}
+%     \begin{subfigure}[b]{.3\linewidth}
+%         \centering
+%         \includegraphics[scale=0.48,trim={0mm 1.6mm 0mm 0mm},clip]{epoch.png}
+%     \end{subfigure}
+%     \caption{Change in accuracy while varying the number of epochs and learning rate, along with 95\% confidence interval (shaded).}
+%     \label{figure:change}
+% \end{figure*}
 
-taking the same idea, train on individual class, load the weight to construct the target
+\subsection{Class-level Dynamic Model Construction}
 
+Among various techniques for multi-task learning, one of the successful approach is to use separate fully-connected layer for each task~\cite{huang2016mtnet, girshick2015fast, long2017learning}. After training, if one of the task is no longer necessary, corresponding fully-connected layers are removed saving computations during inference.
 
+In the case of transfer learning, it is found that a model can perform better when it is pre-trained with different task. Since it is using the same architecture, we can clearly see that there is no additional computation for an inference.
 
-\section{Activation and Loss}
+Inspired by thewe two techniques, I propose class-level dynamic model construction (CLDMC). CLDMC can be achieved as following:
+
+\begin{enumerate}
+	\item pre-train a model with multi-class data
+	\item freeze the model parameters and replace the last full-connected layer
+	\item fine-tune the last layer to classify each class against all the other classes
+	\item create a mapping from class to weights, where the weights in the mapping are the weights from the fine-tuned fully-connected layer which generate the output for the target class (Note that the weights for the negative class is dropped)
+	\item at the time of the inference, the last fully-connected layer is constructed dynamically by loading weights for each class from the mapping
+\end{enumerate}
+
+Recall that the successful solution should satisfy the following conditions:
+\begin{enumerate}
+	\item dynamic addition and removal of a class must be possible
+	\item minimal computation is desired for an inference
+\end{enumerate}
+
+With CLDMC, addition of a class is very simply as it can be achieved by adding a new connections in the fully-connected layer with the corresponding weights. Unlike multi-task learning, where retraining of the whole model is unavoidable in the case of task addition, CLDMC only requires fine-tuned weights of for the desired class. Since the weights for each class are obtained from independent fine-tuning (step 3, 4), we do not need to retrain the weights for the existing classes. Similarly, removal of a class can be achieved by excluding the unnecessary class weights during the model construction in step 5.
+
+Note that the constructed model has the same amount of conputation as the baseline model which is designed and trained explcitly to detact the same set of class. In other words, there is no cost for adding or removing a class with CLDMC, satisfying the second criterion.
+
+\section{Class-level Transfer Learning}
+
 Perform an initial review of relevant literature. Has your problem, or one of similar nature, been considered before? By whom? What are the differences or limitations (if any)?
 
 \subsection{How many class can it predict}
