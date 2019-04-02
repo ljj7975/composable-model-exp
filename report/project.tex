@@ -123,11 +123,21 @@ With CLDMC, addition of a class is very simply as it can be achieved by adding a
 
 Note that the constructed model has the same amount of conputation as the baseline model which is designed and trained explcitly to detact the same set of class. In other words, there is no cost for adding or removing a class with CLDMC, satisfying the second criterion.
 
-\section{Class-level Transfer Learning}
+\section{Class-level Transfer Learning(required condition)}
 
-Perform an initial review of relevant literature. Has your problem, or one of similar nature, been considered before? By whom? What are the differences or limitations (if any)?
+Unfortunately, CLDMC requires specific activation function for the last layer and loss function must be adjusted accordingly. For classification 
 
-\subsection{How many class can it predict}
+experimental set up
+
+\subsection{location of the activation function}
+
+how softmax in loss is better than softmax as last activation layer
+
+demonstration
+
+\subsection{Sigmoid vs Softmax}
+
+how sigmoid makes more sense than softmax
 
 \section{Experiments}
 

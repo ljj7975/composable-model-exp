@@ -125,7 +125,8 @@ class MNIST(data.Dataset):
             data = self.data[unknown_idx]
             idx = np.arange(len(data))
 
-            np.random.seed(0)
+            # np.random.seed(0)
+            np.random.seed(10)
             np.random.shuffle(idx)
 
             if self.size_per_class is not None:

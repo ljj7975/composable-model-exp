@@ -31,7 +31,8 @@ class BaseDataLoader(DataLoader):
 
         idx_full = np.arange(self.n_samples)
 
-        np.random.seed(0)
+        # np.random.seed(0)
+        np.random.seed(10)
         np.random.shuffle(idx_full)
 
         len_valid = int(self.n_samples * split)

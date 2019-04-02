@@ -16,5 +16,5 @@ python train.py -b saved/mnist_base/0330_155217/model_best.pth -fc config/mnist_
 ## evaluation model
 
 ```
-python evaluate.py -b trained/mnist_base/0330_160337/model_best.pth -t 1 2 -ft trained/mnist_fine_tune
+python evaluate.py -b saved/mnist_base -t 1 2 -ft saved/mnist_fine_tune
 ```

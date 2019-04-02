@@ -119,8 +119,8 @@ def main(config, base_model, fine_tuned_model_dir, target_class):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PyTorch Template')
 
-    parser.add_argument('-b', '--base_model', default=None, type=str,
-                        help='path to base model checkpoint (default: None)')
+    parser.add_argument('-b', '--base_model', default='saved/mnist_base', type=str,
+                        help='path to dir containing base model (default: saved/mnist_base)')
     parser.add_argument('-d', '--device', default=None, type=str,
                         help='indices of GPUs to enable (default: all)')
     parser.add_argument('-ft', '--fine_tuned_model_dir', type=str,
@@ -132,9 +132,14 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if args.base_model:
-        config = torch.load(args.base_model)['config']
+    latest_model = max(os.listdir(args.base_model))
+
+    base_model = os.path.join(args.base_model, latest_model, 'model_best.pth')
+    cp.print_progress("base model : ", base_model)
+
+    config = torch.load(base_model)['config']
+
     if args.device:
         os.environ["CUDA_VISIBLE_DEVICES"]=args.device
 
-    main(config, args.base_model, args.fine_tuned_model_dir, args.target_class)
+    main(config, base_model, args.fine_tuned_model_dir, args.target_class)
