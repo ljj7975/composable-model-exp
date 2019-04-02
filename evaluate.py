@@ -117,9 +117,9 @@ def combine_model(model, fine_tuned_model_dir, target_class):
 
 def main(config, base_model, fine_tuned_model_dir, target_class, seed):
 
-    model, data_loader, loss_fn, metrics = load_model(config, base_model, target_class, seed)
-
     config['metrics'] = ["pred_acc"]
+    
+    model, data_loader, loss_fn, metrics = load_model(config, base_model, target_class, seed)
 
     if len(target_class) == 10:
         cp.print_progress("< Base Model >")

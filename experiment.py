@@ -69,9 +69,9 @@ def evaluate_base_model(saved_model_dir):
             else :
                 config = torch.load(base_model)['config']
 
+            config['metrics'] = ["pred_acc"]
             model, data_loader, loss_fn, metrics = evaluate.load_model(config, base_model, TARGET_CLASS)
 
-            config['metrics'] = ["pred_acc"]
             log = evaluate.evaluate(model, data_loader, loss_fn, metrics)
 
             acc.append(log['pred_acc'])
