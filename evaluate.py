@@ -63,8 +63,8 @@ def load_model(config, base_model, target_class, seed=None):
 
     model.load_state_dict(state_dict)
 
-    if not seed:
-        seed = config['data_loader']['args']['seed']
+    seed = config['data_loader']['args'].get('seed', None)
+    unknown = config['data_loader']['args'].get('unknown', False)
 
     # setup data_loader instances
     data_loader = getattr(data_loaders, config['data_loader']['type'])(
@@ -75,7 +75,7 @@ def load_model(config, base_model, target_class, seed=None):
         training=False,
         num_workers=2,
         target_class=target_class,
-        unknown=False,
+        unknown=unknown,
         seed=seed
     )
 

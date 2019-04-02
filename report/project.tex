@@ -37,6 +37,10 @@
 
 \usepackage{algpseudocode}
 
+\usepackage{booktabs}
+\usepackage{multirow}
+
+
 \title{Dynamic Model Construction for Efficient Classification}
 
 \author{
@@ -127,22 +131,52 @@ Note that the constructed model has the same amount of conputation as the baseli
 
 Unfortunately, due to the dynamic construction of the last layer, specific setting is required to preserve the accuracy for the constructed model
 
-experimental set up
+\begin{table*}[t]
+    \centering
+    \small
+    \scalebox{0.9}{
+	    \begin{tabular}{ccccccccccccc}
+	        \toprule[1pt]
+	        \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Loss function}} &
+	        \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Base model}} &
+        	\multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Combined model}} &
+        	\multicolumn{10}{c}{\bf Fine tuned accuracy per class } \\
+        	\cmidrule(lr){4-13}
+			& & & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 \\
+	        \midrule
+			softmax + nll & 91.4 & 82.41 & 98.5 & 98.9 & 96.3 & 96.5 & 96.2 & 94.8 & 98.0 & 96.3 & 95.1 & 93.0 \\
+			softmax + bce & 92.0 & 82.74 & 98.4 & 98.9 & 96.2 & 96.3 & 96.3 & 94.8 & 98.0 & 94.4 & 94.3 & 93.0 \\
+			sigmoid + bce & 92.2 & 84.24 & 98.5 & 99.0 & 96.3 & 96.6 & 96.7 & 95.2 & 98.0 & 96.1 & 95.2 & 93.8 \\
+	        \bottomrule[1pt]
+	    \end{tabular}
+    }
+    \caption{Accuracy with different loss function}
+    \label{table:accuracy}
+\end{table*}
 
-\subsection{location of the activation function}
 
-how softmax in loss is better than softmax as last activation layer
-
-demonstration
-
-\subsection{Sigmoid vs Softmax}
-
-how sigmoid makes more sense than softmax
-
-
-
-
-
+% & \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Device}} &
+        % \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Processor}} &
+        % \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Platform}} &
+        % \multicolumn{2}{c}{\bf \texttt{res8} } &
+        % \multicolumn{2}{c}{\bf \texttt{res8-narrow} } \\
+        % \cmidrule(lr){5-6}
+        % \cmidrule(lr){7-8}
+        % & & & & Lat. (ms) & Acc. (\%) & Lat. (ms) & Acc. (\%) \\
+        % \midrule
+        % \hspace{1mm}\multirow{5}{*}{GPU} & Desktop & GTX 1080 Ti & PyTorch  & 1 & 94.34 & 1 & 91.16 \\
+        % & Desktop & GTX 1080 Ti & Firefox & 12 & 94.06 & 10 & 90.91 \\
+        % & Macbook Pro (2017) & Intel Iris Plus 650 & Firefox  & 29 & 93.99 & 15 & 90.78 \\
+        % & Macbook Air (2013) & Intel HD 6000 & Firefox  & 34 & 93.99 & 19 & 90.78 \\
+        % & Galaxy S8 (2017) & Adreno 540 & Firefox & 60 & 94.06 & 43 & 88.96 \\
+        % \midrule
+        % \hspace{1mm}\multirow{6}{*}{CPU}
+        % & Desktop & i7-4790k (quad) & PyTorch  & 10 & 94.30 & 2 & 91.16 \\
+        % & Macbook Pro (2017) & i5-7287U (quad) & PyTorch  & 12 & 94.15 & 3 & 91.16 \\
+        % & Desktop & i7-4790k (quad) & Firefox  & 371 & 94.06 & 94 & 90.91 \\
+        % & Macbook Pro (2017) & i5-7287U (quad) & Firefox  & 361 & 93.99 & 107 & 90.78 \\
+        % & Macbook Air (2013) & i5-4260U (dual) & Firefox  & 485 & 93.99 & 115 & 90.78 \\
+        % & Galaxy S8 (2017) & Snapdragon 835 (octa) & Firefox & 1105 & 94.06 & 265 & 88.96 \\
 
 
 
