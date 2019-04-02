@@ -47,8 +47,7 @@ def evaluate(model, data_loader, loss_fn, metrics):
 
     return log
 
-def main(config, base_model, fine_tuned_model_dir, target_class, seed):
-
+def load_model(config, base_model, target_class, seed=None):
     # build model architecture
     model = util.get_instance(models, 'model', config)
 
@@ -60,6 +59,9 @@ def main(config, base_model, fine_tuned_model_dir, target_class, seed):
         model = torch.nn.DataParallel(model)
 
     model.load_state_dict(state_dict)
+
+    if not seed:
+        seed = config['data_loader']['args']['seed']
 
     # setup data_loader instances
     data_loader = getattr(data_loaders, config['data_loader']['type'])(
@@ -77,16 +79,11 @@ def main(config, base_model, fine_tuned_model_dir, target_class, seed):
     # get function handles of loss and metrics
     loss_fn = getattr(loss_functions, config['loss'])
 
-    config['metrics'] = ["pred_acc"]
-
     metrics = [getattr(metric_functions, met) for met in config['metrics']]
 
-    if len(target_class) == 10:
-        cp.print_progress("< Base Model >")
-        util.print_setting(data_loader, None, model, loss_fn, metrics, None, None)
+    return model, data_loader, loss_fn, metrics
 
-        base_model_evaluation = evaluate(model, data_loader, loss_fn, metrics)
-
+def combine_model(model, fine_tuned_model_dir, target_class):
     weight_list = []
     bias_list = []
     for target in target_class:
@@ -110,6 +107,22 @@ def main(config, base_model, fine_tuned_model_dir, target_class, seed):
     model.fc2.weight = torch.nn.Parameter(weight)
     model.fc2.bias = torch.nn.Parameter(bias)
 
+    return model
+
+def main(config, base_model, fine_tuned_model_dir, target_class, seed):
+
+    model, data_loader, loss_fn, metrics = load_model(config, base_model, target_class, seed)
+
+    config['metrics'] = ["pred_acc"]
+
+    if len(target_class) == 10:
+        cp.print_progress("< Base Model >")
+        util.print_setting(data_loader, None, model, loss_fn, metrics, None, None)
+
+        base_model_evaluation = evaluate(model, data_loader, loss_fn, metrics)
+
+    model = combine_model(model, fine_tuned_model_dir, target_class)
+
     cp.print_progress("< Combined Model >")
 
     util.print_setting(data_loader, None, model, loss_fn, metrics, None, None)
@@ -130,7 +143,7 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--target_class', nargs='+', type=int,
                         help="target class to fine tune (default: all 10 classes)",
                         default=[0,1,2,3,4,5,6,7,8,9])
-    parser.add_argument('-s', '--seed', default=0, type=int, help="random seed")
+    parser.add_argument('-s', '--seed', default=None, type=int, help="random seed")
 
     args = parser.parse_args()
 

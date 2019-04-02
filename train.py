@@ -1,4 +1,3 @@
-import copy
 import os
 import json
 import argparse
@@ -90,20 +89,18 @@ def fine_tune_model(config, base_model):
 
     return os.path.join(trainer.checkpoint_dir, 'model_best.pth')
 
-def main(base_config, fine_tune_config_template, base_model, target_class, seed):
+def main(base_config, fine_tune_config, base_model, target_class, seed):
     base_config['data_loader']['args']['seed'] = seed
 
     if not base_model:
         base_model = train_base_model(base_config)
 
+    fine_tune_config['trainer']['epochs'] = fine_tune_config_template['trainer']['epochs'] + base_config['trainer']['epochs']
+
+    fine_tune_config['data_loader']['args']['seed'] = seed
+
     for target in target_class:
-        fine_tune_config = copy.deepcopy(fine_tune_config_template)
-
         fine_tune_config['target_class'] = [target]
-
-        fine_tune_config['trainer']['epochs'] = fine_tune_config_template['trainer']['epochs'] + base_config['trainer']['epochs']
-
-        fine_tune_config['data_loader']['args']['seed'] = seed
 
         fine_tune_model(fine_tune_config, base_model)
 
@@ -126,7 +123,6 @@ if __name__ == '__main__':
     if args.base_config:
         # load config file
         base_config = json.load(open(args.base_config))
-        path = os.path.join(base_config['trainer']['save_dir'], base_config['name'])
     elif args.base_model:
         # load base_config file from base model checkpoint
         base_config = torch.load(args.base_model)['config']
@@ -135,9 +131,9 @@ if __name__ == '__main__':
 
     if args.fine_tune_config:
         # load config file
-        fine_tune_config_template = json.load(open(args.fine_tune_config))
+        fine_tune_config = json.load(open(args.fine_tune_config))
 
     if args.device:
         os.environ["CUDA_VISIBLE_DEVICES"] = args.device
 
-    main(base_config, fine_tune_config_template, args.base_model, args.target_class, args.seed)
+    main(base_config, fine_tune_config, args.base_model, args.target_class, args.seed)
