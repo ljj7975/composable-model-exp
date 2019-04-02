@@ -90,7 +90,9 @@ def fine_tune_model(config, base_model):
 
     return os.path.join(trainer.checkpoint_dir, 'model_best.pth')
 
-def main(base_config, fine_tune_config_template, base_model, target_class):
+def main(base_config, fine_tune_config_template, base_model, target_class, seed):
+    base_config['data_loader']['args']['seed'] = seed
+
     if not base_model:
         base_model = train_base_model(base_config)
 
@@ -100,6 +102,8 @@ def main(base_config, fine_tune_config_template, base_model, target_class):
         fine_tune_config['target_class'] = [target]
 
         fine_tune_config['trainer']['epochs'] = fine_tune_config_template['trainer']['epochs'] + base_config['trainer']['epochs']
+
+        fine_tune_config['data_loader']['args']['seed'] = seed
 
         fine_tune_model(fine_tune_config, base_model)
 
@@ -116,6 +120,7 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--target_class', nargs='+', type=int,
                         help="target class to fine tune (default: all 10 classes)",
                         default=[0,1,2,3,4,5,6,7,8,9])
+    parser.add_argument('-s', '--seed', default=0, type=int, help="random seed")
     args = parser.parse_args()
 
     if args.base_config:
@@ -135,4 +140,4 @@ if __name__ == '__main__':
     if args.device:
         os.environ["CUDA_VISIBLE_DEVICES"] = args.device
 
-    main(base_config, fine_tune_config_template, args.base_model, args.target_class)
+    main(base_config, fine_tune_config_template, args.base_model, args.target_class, args.seed)

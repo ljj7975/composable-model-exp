@@ -7,9 +7,10 @@ class BaseDataLoader(DataLoader):
     """
     Base class for all data loaders
     """
-    def __init__(self, dataset, batch_size, shuffle, validation_split, num_workers, collate_fn=default_collate):
+    def __init__(self, dataset, batch_size, shuffle, validation_split, num_workers, seed, collate_fn=default_collate):
         self.validation_split = validation_split
         self.shuffle = shuffle
+        self.seed = seed
 
         self.batch_idx = 0
         self.n_samples = len(dataset)
@@ -31,8 +32,7 @@ class BaseDataLoader(DataLoader):
 
         idx_full = np.arange(self.n_samples)
 
-        # np.random.seed(0)
-        np.random.seed(10)
+        np.random.seed(self.seed)
         np.random.shuffle(idx_full)
 
         len_valid = int(self.n_samples * split)

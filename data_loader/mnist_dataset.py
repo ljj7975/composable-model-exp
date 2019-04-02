@@ -54,7 +54,7 @@ class MNIST(data.Dataset):
         warnings.warn("test_data has been renamed data")
         return self.data
 
-    def __init__(self, root, target_class=[0,1,2,3,4,5,6,7,8,9], size_per_class=None, train=True, transform=None, target_transform=None, download=False, unknown=False):
+    def __init__(self, root, target_class=[0,1,2,3,4,5,6,7,8,9], size_per_class=None, train=True, transform=None, target_transform=None, download=False, unknown=False, seed=0):
         self.root = os.path.expanduser(root)
         self.transform = transform
         self.target_transform = target_transform
@@ -125,8 +125,7 @@ class MNIST(data.Dataset):
             data = self.data[unknown_idx]
             idx = np.arange(len(data))
 
-            # np.random.seed(0)
-            np.random.seed(10)
+            np.random.seed(seed)
             np.random.shuffle(idx)
 
             if self.size_per_class is not None:
@@ -143,7 +142,8 @@ class MNIST(data.Dataset):
 
         
         print("< Dataset Summary >")
-        
+        print("\tseed \t:", seed)
+
         for index, label in enumerate(target_class):
             print("\t", label, "\t:", index, " (", data_size[index], ")")
         if self.unknown:

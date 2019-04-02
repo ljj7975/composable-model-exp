@@ -47,7 +47,7 @@ def evaluate(model, data_loader, loss_fn, metrics):
 
     return log
 
-def main(config, base_model, fine_tuned_model_dir, target_class):
+def main(config, base_model, fine_tuned_model_dir, target_class, seed):
 
     # build model architecture
     model = util.get_instance(models, 'model', config)
@@ -70,7 +70,8 @@ def main(config, base_model, fine_tuned_model_dir, target_class):
         training=False,
         num_workers=2,
         target_class=target_class,
-        unknown=False
+        unknown=False,
+        seed=seed
     )
 
     # get function handles of loss and metrics
@@ -129,6 +130,7 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--target_class', nargs='+', type=int,
                         help="target class to fine tune (default: all 10 classes)",
                         default=[0,1,2,3,4,5,6,7,8,9])
+    parser.add_argument('-s', '--seed', default=0, type=int, help="random seed")
 
     args = parser.parse_args()
 
@@ -142,4 +144,4 @@ if __name__ == '__main__':
     if args.device:
         os.environ["CUDA_VISIBLE_DEVICES"]=args.device
 
-    main(config, base_model, args.fine_tuned_model_dir, args.target_class)
+    main(config, base_model, args.fine_tuned_model_dir, args.target_class, args.seed)

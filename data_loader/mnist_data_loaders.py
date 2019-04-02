@@ -5,7 +5,7 @@ from base import BaseDataLoader
 import torch
 
 class MnistDataLoader(BaseDataLoader):
-    def __init__(self, data_dir, batch_size, shuffle, validation_split, num_workers, size_per_class=None, training=True, target_class=[0,1,2,3,4,5,6,7,8,9], unknown=True):
+    def __init__(self, data_dir, batch_size, shuffle, validation_split, num_workers, size_per_class=None, training=True, target_class=[0,1,2,3,4,5,6,7,8,9], unknown=True, seed=0):
         trsfm = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize((0.1307,), (0.3081,))
@@ -21,10 +21,12 @@ class MnistDataLoader(BaseDataLoader):
                     target_class=target_class,
                     size_per_class=size_per_class,
                     transform=trsfm,
-                    unknown=unknown)
+                    unknown=unknown,
+                    seed=seed)
 
         super(MnistDataLoader, self).__init__(
                     self.dataset,
                     batch_size, shuffle,
                     validation_split,
-                    num_workers)
+                    num_workers,
+                    seed)
