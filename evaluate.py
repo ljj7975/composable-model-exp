@@ -52,7 +52,10 @@ def load_model(config, base_model, target_class, seed=None):
     model = util.get_instance(models, 'model', config)
 
     # load state dict
-    checkpoint = torch.load(base_model)
+    if not torch.cuda.is_available():
+        checkpoint = torch.load(base_model, map_location='cpu')
+    else:
+        checkpoint = torch.load(base_model)
     state_dict = checkpoint['state_dict']
 
     if config['n_gpu'] > 1:
@@ -93,7 +96,10 @@ def combine_model(model, fine_tuned_model_dir, target_class):
 
         latest_best_model = os.path.join(dir_path, max(trained_models), "model_best.pth")
 
-        checkpoint = torch.load(latest_best_model)
+        if not torch.cuda.is_available():
+            checkpoint = torch.load(latest_best_model, map_location='cpu')
+        else:
+            checkpoint = torch.load(latest_best_model)
         state_dict = checkpoint['state_dict']
 
         weight_list.append(state_dict["fc2.weight"][0])
@@ -152,7 +158,10 @@ if __name__ == '__main__':
     base_model = os.path.join(args.base_model, latest_model, 'model_best.pth')
     cp.print_progress("base model : ", base_model)
 
-    config = torch.load(base_model)['config']
+    if not torch.cuda.is_available():
+        config = torch.load(base_model, map_location='cpu')['config']
+    else:
+        config = torch.load(base_model)['config']
 
     if args.device:
         os.environ["CUDA_VISIBLE_DEVICES"]=args.device

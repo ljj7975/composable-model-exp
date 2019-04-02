@@ -32,7 +32,7 @@ def train_models(num_model, saved_model_dir):
         seed = random.randint(0, 200)
 
         for loss in EXP_LOSS:
-            model_dir = os.path.join(saved_model_dir, loss) 
+            model_dir = os.path.join(saved_model_dir, loss)
             next_index = str(int(max(os.listdir(model_dir))) + 1)
             dest_dir = os.path.join(saved_model_dir, loss, next_index)
 
@@ -63,7 +63,10 @@ def evaluate_base_model(saved_model_dir):
             base_model = os.path.join(base_model_dir, latest_model, 'model_best.pth')
             cp.print_warning("base model : ", base_model)
 
-            config = torch.load(base_model)['config']
+            if not torch.cuda.is_available():
+                config = torch.load(base_model, map_location='cpu')['config']
+            else :
+                config = torch.load(base_model)['config']
 
             model, data_loader, loss_fn, metrics = evaluate.load_model(config, base_model, TARGET_CLASS)
 
@@ -85,7 +88,7 @@ def evaluate_combined_model(saved_model_dir):
     mapping = {}
 
     for loss in EXP_LOSS:
-        acc = []
+        sum = [0] * len(TARGET_CLASS)
 
         model_dir = os.path.join(saved_model_dir, loss)
         for i in os.listdir(model_dir):
@@ -95,33 +98,47 @@ def evaluate_combined_model(saved_model_dir):
             base_model = os.path.join(base_model_dir, latest_model, 'model_best.pth')
             cp.print_warning("base model : ", base_model)
 
-            config = torch.load(base_model)['config']
-
-            model, data_loader, loss_fn, metrics = evaluate.load_model(config, base_model, TARGET_CLASS)
+            if not torch.cuda.is_available():
+                config = torch.load(base_model, map_location='cpu')['config']
+            else :
+                config = torch.load(base_model)['config']
 
             config['metrics'] = ["pred_acc"]
+            ordered_class = TARGET_CLASS.copy()
+            random.shuffle(ordered_class)
 
-            model = evaluate.combine_model(model, fine_tuned_model_dir, TARGET_CLASS)
+            target_class = []
+            for c in ordered_class:
+                target_class.append(c)
+                print(target_class)
 
-            log = evaluate.evaluate(model, data_loader, loss_fn, metrics)
+                model, data_loader, loss_fn, metrics = evaluate.load_model(config, base_model, target_class)
 
-            acc.append(log['pred_acc'])
+                model = evaluate.combine_model(model, fine_tuned_model_dir, target_class)
+
+                log = evaluate.evaluate(model, data_loader, loss_fn, metrics)
+
+                sum[len(target_class)-1] += log['pred_acc']
 
         mapping[loss] = {}
-        mapping[loss]['average_accuracy'] = round(np.array(acc).mean(), 3)
-        mapping[loss]['raw_accuracy'] = acc
+        mapping[loss]['average_accuracy'] = []
+        num_model = len(os.listdir(model_dir))
 
-        cp.print_warning('average base model accuracy :', mapping[loss]['average_accuracy'])
-        cp.print_warning(mapping[loss]['raw_accuracy'])
+        for acc in sum:
+            mapping[loss]['average_accuracy'].append(round(acc/num_model, 3))
+        mapping[loss]['summed_accuracy'] = sum
+
+        cp.print_warning('average fine tune model accuracy :', mapping[loss]['average_accuracy'])
+        cp.print_warning('summed fine tune model accuracy :', sum)
 
     return mapping
 
 
 def evaluate_models(saved_model_dir):
-    base_model_acc = evaluate_base_model(saved_model_dir)
+    # base_model_acc = evaluate_base_model(saved_model_dir)
     combined_model_acc = evaluate_combined_model(saved_model_dir)
 
-    print(json.dumps(base_model_acc, indent=4, separators=(': ')))
+    # print(json.dumps(base_model_acc, indent=4, separators=(': ')))
     print(json.dumps(combined_model_acc, indent=4, separators=(': ')))
 
 

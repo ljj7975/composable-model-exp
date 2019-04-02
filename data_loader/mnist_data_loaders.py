@@ -3,6 +3,7 @@ from .mnist_dataset import MNIST
 from torchvision import datasets
 from base import BaseDataLoader
 import torch
+import os
 
 class MnistDataLoader(BaseDataLoader):
     def __init__(self, data_dir, batch_size, shuffle, validation_split, num_workers, size_per_class=None, training=True, target_class=[0,1,2,3,4,5,6,7,8,9], unknown=True, seed=0):
@@ -10,10 +11,13 @@ class MnistDataLoader(BaseDataLoader):
             transforms.ToTensor(),
             transforms.Normalize((0.1307,), (0.3081,))
             ])
+
+        if not os.path.isdir(data_dir):
+            data_dir = '/data/mnist'
         self.data_dir = data_dir
         self.target_class = target_class
         self.unknown = unknown
-        
+
         self.dataset = MNIST(
                     self.data_dir,
                     train=training,
