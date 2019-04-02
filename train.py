@@ -95,7 +95,7 @@ def main(base_config, fine_tune_config, base_model, target_class, seed):
     if not base_model:
         base_model = train_base_model(base_config)
 
-    fine_tune_config['trainer']['epochs'] = fine_tune_config_template['trainer']['epochs'] + base_config['trainer']['epochs']
+    fine_tune_config['trainer']['epochs'] = fine_tune_config['trainer']['epochs'] + base_config['trainer']['epochs']
 
     fine_tune_config['data_loader']['args']['seed'] = seed
 

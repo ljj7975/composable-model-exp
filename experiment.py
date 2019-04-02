@@ -33,7 +33,8 @@ def train_models(num_model, saved_model_dir):
 
         for loss in EXP_LOSS:
             model_dir = os.path.join(saved_model_dir, loss)
-            next_index = str(int(max(os.listdir(model_dir))) + 1)
+            indice = list(map(int, os.listdir(model_dir)))
+            next_index = str(max(indice) + 1)
             dest_dir = os.path.join(saved_model_dir, loss, next_index)
 
             cp.print_warning("training ", i+1, "th model with loss : ", loss)
@@ -110,7 +111,7 @@ def evaluate_combined_model(saved_model_dir):
             target_class = []
             for c in ordered_class:
                 target_class.append(c)
-                print(target_class)
+                print('target_class', target_class)
 
                 model, data_loader, loss_fn, metrics = evaluate.load_model(config, base_model, target_class)
 
@@ -138,8 +139,8 @@ def evaluate_models(saved_model_dir):
     # base_model_acc = evaluate_base_model(saved_model_dir)
     combined_model_acc = evaluate_combined_model(saved_model_dir)
 
-    # print(json.dumps(base_model_acc, indent=4, separators=(': ')))
-    print(json.dumps(combined_model_acc, indent=4, separators=(': ')))
+    # cp.print_progress(json.dumps(base_model_acc, indent=4, separators=(': ')))
+    cp.print_progress(json.dumps(combined_model_acc, indent=4, separators=(': ')))
 
 
 def main(train_flag, saved_model_dir, num_model):

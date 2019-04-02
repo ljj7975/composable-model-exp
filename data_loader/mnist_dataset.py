@@ -71,7 +71,7 @@ class MNIST(data.Dataset):
             data_file = self.training_file
         else:
             data_file = self.test_file
-        
+
         self.data, self.targets = torch.load(os.path.join(self.processed_folder, data_file))
 
         # resize the data
@@ -85,12 +85,10 @@ class MNIST(data.Dataset):
 
         if len(target_class) < 10 and unknown:
             # generate unknown class with remaining class
-            print("generate unknown class with remaining class")
             self.unknown = True
 
         else:
             # no unknown class is necessary
-            print("no unknown class is necessary")
             self.unknown = False
 
         # relabel the data
@@ -110,7 +108,7 @@ class MNIST(data.Dataset):
                 data = self.data[idx]
                 labels = torch.zeros(len(data)).int() + target_class.index(label)
                 data_size.append(len(data))
-                
+
                 if new_data is None:
                     new_data = data
                     new_targets = labels
@@ -140,7 +138,7 @@ class MNIST(data.Dataset):
             new_data = torch.cat((new_data, data[idx]))
             new_targets = torch.cat((new_targets, labels))
 
-        
+
         print("< Dataset Summary >")
         print("\tseed \t:", seed)
 
@@ -152,7 +150,7 @@ class MNIST(data.Dataset):
 
         self.data = new_data
         self.targets = new_targets
-            
+
 
     def __getitem__(self, index):
         """
