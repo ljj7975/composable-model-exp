@@ -58,6 +58,7 @@ class CIFAR10(data.Dataset):
         self.train = train  # training set or test set
 
         if download:
+            makedir_exist_ok(root)
             self.download()
 
         if not self._check_integrity():

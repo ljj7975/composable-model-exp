@@ -33,7 +33,7 @@ class Cifar10DataLoader(BaseDataLoader):
                     download=True,
                     transform=trsfm)
 
-        super(Cifar10Loader, self).__init__(
+        super(Cifar10DataLoader, self).__init__(
                     self.dataset,
                     batch_size, shuffle,
                     validation_split,
@@ -69,7 +69,7 @@ class Cifar100DataLoader(BaseDataLoader):
                     download=True,
                     transform=trsfm)
 
-        super(Cifar100Loader, self).__init__(
+        super(Cifar100DataLoader, self).__init__(
                     self.dataset,
                     batch_size, shuffle,
                     validation_split,
