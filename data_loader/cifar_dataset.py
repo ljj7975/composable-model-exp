@@ -92,91 +92,88 @@ class CIFAR10(data.Dataset):
         self.data = self.data.transpose((0, 2, 3, 1))  # convert to HWC
 
         # self.data = torch.Tensor(self.data)
-        # self.targets = torch.Tensor(self.targets)
+        self.targets = torch.Tensor(self.targets)
 
         # print('original shape', len(self.data))
         # print('original_shaepe', (self.data.shape))
 
         self._load_meta()
 
-        # self.target_class = target_class
-        # self.unknown = False
+        self.target_class = target_class
+        self.unknown = False
 
-        # if '100' in self.__class__.__name__:
-        #     # CIFAR100
-        #     if not self.target_class:
-        #         self.target_class = np.arange(100)
+        if '100' in self.__class__.__name__:
+            # CIFAR100
+            if not self.target_class:
+                self.target_class = np.arange(100)
 
-        #     if len(self.target_class) < 100 and unknown:
-        #         self.unknown = True
+            if len(self.target_class) < 100 and unknown:
+                self.unknown = True
 
-        # else:
-        #     # CIFAR10
-        #     if not self.target_class:
-        #         self.target_class = np.arange(10)
+        else:
+            # CIFAR10
+            if not self.target_class:
+                self.target_class = np.arange(10)
 
-        #     if len(self.target_class) < 10 and unknown:
-        #         self.unknown = True
+            if len(self.target_class) < 10 and unknown:
+                self.unknown = True
 
-        # data_size = []
-        # unknown_idx = torch.zeros(len(self.targets)).byte()
+        data_size = []
+        unknown_idx = torch.zeros(len(self.targets)).byte()
 
-        # new_data = None
-        # new_targets = None
+        new_data = None
+        new_targets = None
 
-        # print(self.target_class)
+        print(self.target_class)
 
-        # for c in self.classes:
-        #     class_index = int(self.class_to_idx[c])
-        #     if class_index in self.target_class:
-        #         print(self.targets[:10])
-        #         print(type(self.targets))
-        #         data_idx = self.targets == class_index
-        #         data = self.data[data_idx][:size_per_class]
+        for c in self.classes:
+            class_index = int(self.class_to_idx[c])
+            if class_index in self.target_class:
+                data_idx = self.targets == class_index
+                data = self.data[data_idx][:size_per_class]
 
-        #         print(data_idx)
-        #         labels = torch.zeros(len(data)).int() + self.target_class.index(class_index)
-        #         data_size.append(len(data))
+                labels = torch.zeros(len(data)).int() + self.target_class.index(class_index)
+                data_size.append(len(data))
 
-        #         if new_data is None:
-        #             new_data = data
-        #             new_targets = labels
-        #         else:
-        #             new_data = torch.cat((new_data, data))
-        #             new_targets = torch.cat((new_targets, labels))
+                if new_data is None:
+                    new_data = data
+                    new_targets = labels
+                else:
+                    new_data = np.concatenate((new_data, data))
+                    new_targets = np.concatenate((new_targets, labels))
 
-        #     else:
-        #         unknown_idx |= (self.targets == class_index)
+            else:
+                unknown_idx |= (self.targets == class_index)
 
-        # if self.unknown:
-        #     data = self.data[unknown_idx]
-        #     data_idx = np.arange(len(data))
+        if self.unknown:
+            data = self.data[unknown_idx]
+            data_idx = np.arange(len(data))
 
-        #     np.random.shuffle(data_idx)
+            np.random.shuffle(data_idx)
 
-        #     if size_per_class is not None:
-        #         data_idx = data_idx[:size_per_class]
-        #     else:
-        #         size_per_class = round(len(new_data) / len(self.target_class))
-        #         data_idx = data_idx[:size_per_class]
+            if size_per_class is not None:
+                data_idx = data_idx[:size_per_class]
+            else:
+                size_per_class = round(len(new_data) / len(self.target_class))
+                data_idx = data_idx[:size_per_class]
 
-        #     data_size.append(len(data_idx))
-        #     labels = torch.zeros(len(data_idx)).int() + len(self.target_class)
+            data_size.append(len(data_idx))
+            labels = torch.zeros(len(data_idx)).int() + len(self.target_class)
 
-        #     new_data = torch.cat((new_data, data[data_idx]))
-        #     new_targets = torch.cat((new_targets, labels))
+            new_data = np.concatenate((new_data, data[data_idx]))
+            new_targets = np.concatenate((new_targets, labels))
 
-        # print("< Dataset Summary >")
-        # print("\tseed \t:", seed)
+        print("< Dataset Summary >")
+        print("\tseed \t:", seed)
 
-        # for index, label in enumerate(self.target_class):
-        #     print("\t", label, "\t:", index, " (", data_size[index], ")")
-        # if self.unknown:
-        #     print("\tunknown\t:", len(self.target_class), " (", data_size[len(self.target_class)], ")")
-        # print("total data size : ", len(new_data))
+        for index, label in enumerate(self.target_class):
+            print("\t", label, "\t:", index, " (", data_size[index], ")")
+        if self.unknown:
+            print("\tunknown\t:", len(self.target_class), " (", data_size[len(self.target_class)], ")")
+        print("total data size : ", len(new_data))
 
-        # self.data = new_data
-        # self.targets = new_targets
+        self.data = new_data
+        self.targets = new_targets
 
     def _load_meta(self):
         path = os.path.join(self.root, self.base_folder, self.meta['filename'])
@@ -203,12 +200,9 @@ class CIFAR10(data.Dataset):
         """
         img, target = self.data[index], self.targets[index]
 
-        print('sdfsdf')
-        print(type(img))
         # doing this so that it is consistent with all other datasets
         # to return a PIL Image
         img = Image.fromarray(img)
-        print('sdfsdfdsfs')
 
         if self.transform is not None:
             img = self.transform(img)
