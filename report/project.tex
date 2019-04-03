@@ -74,14 +74,14 @@ In this section you are going to present a brief background and motivation of yo
 The main challenge with this problem is on model flexibility and resource usage. Even though these two aspects are quite related, they are generally considered as two separate problem. As a result, this problem can be categorized differently depending on which direction one approaches. The three most related domains are: ensemble learning, multi-task learning, and transfer learning
 
 \subsection{Ensemble Learning}
-Ensemble learning is a common technique in the field of machine learning which achieves greater performance by combining ouputs from multiple models which are independent. The most famous techniques are voting, weighting, bagging and boosting~\cite{dietterich2000ensemble, breiman1996bagging, freund1996experiments}. Even though ensemble learning is considered to be easy to implement, most of the ensemble techniques assume that each model has different architecture. As a result, ensemble learning often requires significant computations as it requires every model to process the input.
+Ensemble learning is a common technique in the field of machine learning which achieves greater performance by combining outputs from multiple models which are independent. The most famous techniques are voting, weighting, bagging and boosting~\cite{dietterich2000ensemble, breiman1996bagging, freund1996experiments}. Even though ensemble learning is considered to be easy to implement, most of the ensemble techniques assume that each model has different architecture. As a result, ensemble learning often requires significant computations as it requires every model to process the input.
 
 \subsection{Multi-task Learning}
-On the other hand, multi-task learning takes different approach; combining multiple models into a single model. The key assumption is that if tasks are related, sharing information among tasks throughout training will increase the performance on each task. There are numbers of variations depending on the assumptions. Key design choices include: what kind of information to share and how much information to share among tasks. Two main categories of multi-task learnings are parameter sharing and feature sharing~\cite{ruder2017overview, Caruana1993MultitaskLA, duong2015low, lu2017fully} which differ by type of the information that are shared. Even though multi-task learning has the similar architecture with the desired solution, it is hard to adopt it as a solution for our problem, due to it's assumption that the each task are distint.
+On the other hand, multi-task learning takes different approach; combining multiple models into a single model. The key assumption is that if tasks are related, sharing information among tasks throughout training will increase the performance on each task. There are numbers of variations depending on the assumptions. Key design choices include: what kind of information to share and how much information to share among tasks. Two main categories of multi-task learnings are parameter sharing and feature sharing~\cite{ruder2017overview, Caruana1993MultitaskLA, duong2015low, lu2017fully} which differ by type of the information that are shared. Even though multi-task learning has the similar architecture with the desired solution, it is hard to adopt it as a solution for our problem, due to it's assumption that the each task are distinct.
 
 \subsection{Transfer Learning}
 
-Transfer learning is inspired by the same assumption as in multi-task learning; if tasks are related, sharing knowledge improves the performance. However, the key difference between two problem is that transfer learning are designed to share the same model architecture for different tasks. First, a model is pre-trained with a task and learns to select important features. Then the model is fine-tuned for the target task, putting all of its effort to produce the best result for the target task exploiting selected features~\cite{yosinski2014transferable}. With its archietectural flexibility, transfer learning has been adopted in wide domains and has shown its strengths~\cite{raina2007self, egan2004effects, glorot2011domain}.
+Transfer learning is inspired by the same assumption as in multi-task learning; if tasks are related, sharing knowledge improves the performance. However, the key difference between two problem is that transfer learning are designed to share the same model architecture for different tasks. First, a model is pre-trained with a task and learns to select important features. Then the model is fine-tuned for the target task, putting all of its effort to produce the best result for the target task exploiting selected features~\cite{yosinski2014transferable}. With its architectural flexibility, transfer learning has been adopted in wide domains and has shown its strengths~\cite{raina2007self, egan2004effects, glorot2011domain}.
 
 \section{Dynamic Model Construction with Class-level Transfer Learning}
 
@@ -107,17 +107,17 @@ Transfer learning is inspired by the same assumption as in multi-task learning; 
 
 In this section, I introduce how to achieve dynamic model construction which adopts to the change in target class set.
 
-One of the common technique used for multi-task learning is to use distinct fully-connected layer for each task~\cite{huang2016mtnet, girshick2015fast, long2017learning}. In this setting, each task is trained independently while weights for upstream layers are shared among classes. Once model is trained, a task can be disgarded from populating output if it is no longer necessary. This is achieved simply by removing corresponding fully-connected layer.
+One of the common technique used for multi-task learning is to use distinct fully-connected layer for each task~\cite{huang2016mtnet, girshick2015fast, long2017learning}. In this setting, each task is trained independently while weights for upstream layers are shared among classes. Once model is trained, a task can be discarded from populating output if it is no longer necessary. This is achieved simply by removing corresponding fully-connected layer.
 
 Next consider a case of transfer learning. Pre-training a model and fine-tuning for target task can leads to increase in performance. There is no change in model architecture throughout this process. Therefore, fine-tuned model uses the same amount of computation as the model which is explicitly trained to accomplish the same task.
 
-Exploiting these charateristics in two distint domains, the proposed algorithm can be summarized as following:
+Exploiting these characteristics in two distinct domains, the proposed algorithm can be summarized as following:
 
 \begin{enumerate}
-	\item pre-train a model as if it is targetting multi-classification problem
+	\item pre-train a model as if it is targeting multi-classification problem
 	\item freeze the model parameters
 	\item fine-tune a model to obtain class-specific weights (step 4 $\sim$ 7)
-	\item construct a dataset whcih labels corresponding class as positive and the others as negative.
+	\item construct a dataset which labels corresponding class as positive and the others as negative.
 	\item replace the last full-connected layer with two classes
 	\item fine-tune the last layer with the constructed data
 	\item store weights for positive class
@@ -131,7 +131,7 @@ For simplicity, I will call this algorithm as composing algorithm, the model tra
 Recall that the desired composed model should satisfy the following conditions:
 
 \begin{enumerate}
-	\item \red{preserve accuracy} 
+	\item \red{preserve accuracy}
 	\item Dynamic addition and removal of a class must be possible
 	\item Minimal computation is desired for an inference
 \end{enumerate}
@@ -146,7 +146,7 @@ Since we do not use weights trained for negative class, the architecture of the 
 
 The most challenging part with the composable model problem is assuring that the composed model suffers from the minimal change in accuracy. In this section, I discuss how such condition can be satisfied with the algorithm presented in the previous section.
 
-\subsection{Limiations with cross entropy loss}
+\subsection{Limitations with cross entropy loss}
 
 State of the art loss for multi-classification problem is cross entropy (CE) loss, which transforms output using softmax and calculates loss using negative log likelihood (NLL).
 Softmax and NLL loss are defined as following:
@@ -160,13 +160,13 @@ where $x$ is the output of the network and $t$ is the target. target is one hot 
 
 Softmax is normalized logits computed from the output of the network. Therefore each index has value between zero and one and sum is designed to be one. Since multi-class classifier rely on the mutually exclusive assumption with about the classes, CE loss is the most suitable as it promotes the positive class while suppressing the negative classes.
 
-However, such assumption does not hold for composed model and CE loss can cause undeterministic behaviour with composed model. When CE loss is used throughout the composing algorithm, the loss which used in fine-tuning is computed with respect to the output of negative class. However, for a composed model, it is not fair to select the class with the greatest value as final class because model outputs for each class are not constructed with respect to each other.
+However, such assumption does not hold for composed model and CE loss can cause indeterministic behaviour with composed model. When CE loss is used throughout the composing algorithm, the loss which used in fine-tuning is computed with respect to the output of negative class. However, for a composed model, it is not fair to select the class with the greatest value as final class because model outputs for each class are not constructed with respect to each other.
 
 For example, let us say there are 3 classes: A, B, and C. For fine-tuning, we construct a dataset which has two classes: one for target class (positive class) and the other constructed with the other two classes (negative class). Once models are fine-tuned for each class, we have weights for positive class and negative class. For simplicity, positive weights are referred with lower case (a, b, and c) and negative weights with lower case with prime (a', b', and c'). During fine-tuning, loss is calculated in pairs: a -- a', b -- b', c -- c'. However, when we construct a composed model, the last layer consists of weights a, b and c. As a results, selecting the highest value as a final class is not a valid approach.
 
 \subsection{Binary cross entropy with sigmoid}
 
-We now understand the limiation of CE loss caused by mutually exclusive assumption among classes. To overcome such issue, I propose binary cross entropy (BCE) loss with sigmoid.
+We now understand the limitation of CE loss caused by mutually exclusive assumption among classes. To overcome such issue, I propose binary cross entropy (BCE) loss with sigmoid.
 
 \begin{align*}
 Sigmoid(y_i) &= \frac{1}{1 + e^{-x_i}} \\
@@ -178,6 +178,8 @@ Unlike softmax in CE Loss, the only input for sigmoid is the output from the net
 It is found that multi-label classification has raised the same issue with CE loss~\cite{liu2017deep}. It is found that the independence guarantee provided by BCE loss with sigmoid is crucial for multi-label classification and enabled successful training of a model.
 
 \section{Experiments}
+
+
 
 In this experiments, I report empirical results for the above theory
 

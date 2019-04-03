@@ -18,3 +18,8 @@ python train.py -b saved/mnist_base/0330_155217/model_best.pth -fc config/mnist_
 ```
 python evaluate.py -b saved/mnist_base -ft saved/mnist_fine_tune
 ```
+
+##  run experiment
+```
+python experiment.py -t -nm 10
+```
