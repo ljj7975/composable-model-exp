@@ -91,11 +91,7 @@ class CIFAR10(data.Dataset):
         self.data = np.vstack(self.data).reshape(-1, 3, 32, 32)
         self.data = self.data.transpose((0, 2, 3, 1))  # convert to HWC
 
-        # self.data = torch.Tensor(self.data)
         self.targets = torch.Tensor(self.targets)
-
-        # print('original shape', len(self.data))
-        # print('original_shaepe', (self.data.shape))
 
         self._load_meta()
 
@@ -105,7 +101,7 @@ class CIFAR10(data.Dataset):
         if '100' in self.__class__.__name__:
             # CIFAR100
             if not self.target_class:
-                self.target_class = np.arange(100)
+                self.target_class = list(np.arange(100))
 
             if len(self.target_class) < 100 and unknown:
                 self.unknown = True
@@ -113,7 +109,7 @@ class CIFAR10(data.Dataset):
         else:
             # CIFAR10
             if not self.target_class:
-                self.target_class = np.arange(10)
+                self.target_class = list(np.arange(10))
 
             if len(self.target_class) < 10 and unknown:
                 self.unknown = True
@@ -123,8 +119,6 @@ class CIFAR10(data.Dataset):
 
         new_data = None
         new_targets = None
-
-        print(self.target_class)
 
         for c in self.classes:
             class_index = int(self.class_to_idx[c])

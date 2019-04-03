@@ -77,14 +77,7 @@ class MNIST(data.Dataset):
 
         self.data, self.targets = torch.load(os.path.join(self.processed_folder, data_file))
 
-        # resize the data
-
-        # self.size_per_class = size_per_class
-
-        # if self.size_per_class:
-        #     self.data, self.targets = self.resize_dataset(self.data, self.targets)
-
-        self.target_class = target_class if target_class else np.arange(10)
+        self.target_class = target_class if target_class else list(np.arange(10))
 
         if len(self.target_class) < 10 and unknown:
             # generate unknown class with remaining class
@@ -97,7 +90,6 @@ class MNIST(data.Dataset):
         # relabel the data
 
         original_labels = np.arange(10)
-        print(type(original_labels[0]))
         unknown_idx = torch.zeros(self.targets.size()).byte()
 
         data_size = []
@@ -108,10 +100,6 @@ class MNIST(data.Dataset):
         for label in original_labels:
             label = int(label)
             if label in self.target_class:
-
-                print(self.targets[:10])
-                print(type(self.targets))
-                print(type(self.data))
                 data_idx = self.targets == label
                 data = self.data[data_idx][:size_per_class]
 
@@ -207,27 +195,6 @@ class MNIST(data.Dataset):
             out_f.write(zip_f.read())
         if remove_finished:
             os.unlink(gzip_path)
-
-    # TODO : this function may not be necessary
-    def resize_dataset(self, data, targets):
-        counter = [0]*10
-        new_data = []
-        new_targets = []
-
-        remaining = 10 * self.size_per_class
-
-        for image, label in zip(data, targets):
-            if counter[label] < self.size_per_class:
-                new_data.append(image)
-                new_targets.append(label)
-
-                counter[label] += 1
-                remaining -=1
-
-            if remaining == 0:
-                break
-
-        return torch.stack(new_data), torch.stack(new_targets)
 
     def download(self):
         """Download the MNIST data if it doesn't exist in processed_folder already."""
