@@ -6,7 +6,7 @@ import torch
 import os
 
 class MnistDataLoader(BaseDataLoader):
-    def __init__(self, data_dir, batch_size, shuffle, validation_split, num_workers, size_per_class=None, training=True, target_class=[0,1,2,3,4,5,6,7,8,9], unknown=True, seed=0):
+    def __init__(self, data_dir, batch_size, shuffle, validation_split, num_workers, size_per_class=None, training=True, target_class=None, unknown=True, seed=0):
         trsfm = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize((0.1307,), (0.3081,))
