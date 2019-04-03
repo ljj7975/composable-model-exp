@@ -17,58 +17,46 @@ def train_base_model(config):
     cp.print_progress('Training base model')
     train_logger = Logger()
 
-    config['data_loader']['args']['target_class'] = [1, 4, 6]
-    config['data_loader']['args']['unknown'] = True
-
     # setup data_loader instances
     data_loader = util.get_instance(data_loaders, 'data_loader', config)
-    # valid_data_loader = data_loader.split_validation()
+    valid_data_loader = data_loader.split_validation()
 
-    print('data_loader', len(data_loader))
-    # print('valid_data_loader', len(valid_data_loader))
+    # build model architecture
+    model = util.get_instance(models, 'model', config)
 
-    for k, label in data_loader:
-        print(label.shape)
-        print(label[:10])
-        break
+    # get function handles of loss and metrics
+    loss_fn = getattr(loss_functions, config['loss'])
+    metrics = [getattr(metric_functions, met) for met in config['metrics']]
 
-    # # build model architecture
-    # model = util.get_instance(models, 'model', config)
+    # build optimizer, learning rate scheduler. delete every lines containing lr_scheduler for disabling scheduler
+    trainable_params = filter(lambda p: p.requires_grad, model.parameters())
+    optimizer = util.get_instance(torch.optim, 'optimizer', config, trainable_params)
 
-    # # get function handles of loss and metrics
-    # loss_fn = getattr(loss_functions, config['loss'])
-    # metrics = [getattr(metric_functions, met) for met in config['metrics']]
+    lr_scheduler = util.get_instance(torch.optim.lr_scheduler, 'lr_scheduler', config, optimizer)
 
-    # # build optimizer, learning rate scheduler. delete every lines containing lr_scheduler for disabling scheduler
-    # trainable_params = filter(lambda p: p.requires_grad, model.parameters())
-    # optimizer = util.get_instance(torch.optim, 'optimizer', config, trainable_params)
+    util.print_setting(data_loader, valid_data_loader, model, loss_fn, metrics,  optimizer, lr_scheduler)
 
-    # lr_scheduler = util.get_instance(torch.optim.lr_scheduler, 'lr_scheduler', config, optimizer)
+    trainer = Trainer(model, loss_fn, metrics, optimizer,
+                      resume=None,
+                      config=config,
+                      data_loader=data_loader,
+                      valid_data_loader=valid_data_loader,
+                      lr_scheduler=lr_scheduler,
+                      train_logger=train_logger)
 
-    # util.print_setting(data_loader, valid_data_loader, model, loss_fn, metrics,  optimizer, lr_scheduler)
+    cp.print_progress('TRAINER\n', trainer)
 
-    # trainer = Trainer(model, loss_fn, metrics, optimizer,
-    #                   resume=None,
-    #                   config=config,
-    #                   data_loader=data_loader,
-    #                   valid_data_loader=valid_data_loader,
-    #                   lr_scheduler=lr_scheduler,
-    #                   train_logger=train_logger)
+    trainer.train()
 
-    # cp.print_progress('TRAINER\n', trainer)
+    cp.print_progress('Training base model completed')
 
-    # trainer.train()
-
-    # cp.print_progress('Training base model completed')
-
-    # return os.path.join(trainer.checkpoint_dir, 'model_best.pth')
+    return os.path.join(trainer.checkpoint_dir, 'model_best.pth')
 
 def fine_tune_model(config, base_model):
     target_class = config['target_class']
     cp.print_progress('Fine tune model with', target_class)
 
     config['data_loader']['args']['target_class'] = target_class
-    config['data_loader']['args']['unknown'] = True
 
     train_logger = Logger()
 
@@ -106,14 +94,14 @@ def main(base_config, fine_tune_config, base_model, target_class, seed):
     if not base_model:
         base_model = train_base_model(base_config)
 
-    # fine_tune_config['trainer']['epochs'] = fine_tune_config['trainer']['epochs'] + base_config['trainer']['epochs']
+    fine_tune_config['trainer']['epochs'] = fine_tune_config['trainer']['epochs'] + base_config['trainer']['epochs']
 
-    # fine_tune_config['data_loader']['args']['seed'] = seed
+    fine_tune_config['data_loader']['args']['seed'] = seed
 
-    # for target in target_class:
-    #     fine_tune_config['target_class'] = [target]
+    for target in target_class:
+        fine_tune_config['target_class'] = [target]
 
-    #     fine_tune_model(fine_tune_config, base_model)
+        fine_tune_model(fine_tune_config, base_model)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train base model and fine tune')
