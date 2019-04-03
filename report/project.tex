@@ -179,19 +179,22 @@ It is found that multi-label classification has raised the same issue with CE lo
 
 \section{Experiments}
 
-
-
-In this experiments, I report empirical results for the above theory
+In this experiment, I report how accuracy of composed model changes with respect to different loss function. The goal of this experiment is to prove the limitation of CE loss empirically and demonstrates the feasibility of composing algorithm.
 
 \subsection{Experimental Setup}
 
+Using PyTorch, the experiments are conducted on MNIST, a standard benchmark for classification~\cite{lecun1998gradient} with a modified version of LeNet-5 ~\cite{lecun2015lenet}. LeNet-5 is constructed with two convolutional, one dropout and two fully connected layers. The original implementation of LeNet-5 has 10 and 20 channels for the two convolutional layers and produces accuracy of 98\% on MNIST dataset. Since our goal of this experiment is to see the performance degradation, the network is modified to have 5 channels for two convolutional layers which is found to produce more descriptive results.
 
+The model is trained with 3 different loss function. First loss function is CE loss. Since PyTorch NLL loss expects log probability, log is applied after softmax but this does not affect the experiment results. Next, I include sigmoid with BCE loss as a proposed solution to preserve accuracy. Lastly, I also include BCE loss with softmax. This setting is useful to understand how crucial sigmoid is for loss function in composing algorithm. The last setting is known to be unstable because BCE loss assumes the independence among classes. In fact, I have observed the training collapse once it reaches a certain point. However, since we report accuracy from the best model, results from this setting is still valid and meaningful.
 
+% Dataset
+% epoch & optimizer
+% random seed 50 experiments taking average
 
 \subsection{Experimental results}
 
 
-
+% table explain the original accuracy and high accuracy
 
 \begin{table*}[t]
     \centering
@@ -215,6 +218,11 @@ In this experiments, I report empirical results for the above theory
     \caption{Accuracy with different loss function}
     \label{table:accuracy}
 \end{table*}
+
+% explain how 10 at random
+
+% graphs,
+
 
 \section{Case study}
 
