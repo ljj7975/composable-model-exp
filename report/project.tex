@@ -37,8 +37,10 @@
 
 \usepackage{algpseudocode}
 
+\usepackage{amsmath}
 \usepackage{booktabs}
 \usepackage{multirow}
+\newcommand{\red}[1]{\textcolor{red}{#1}}
 
 
 \title{Dynamic Model Construction for Efficient Classification}
@@ -72,16 +74,16 @@ In this section you are going to present a brief background and motivation of yo
 The main challenge with this problem is on model flexibility and resource usage. Even though these two aspects are quite related, they are generally considered as two separate problem. As a result, this problem can be categorized differently depending on which direction one approaches. The three most related domains are: ensemble learning, multi-task learning, and transfer learning
 
 \subsection{Ensemble Learning}
-Ensemble learning refers to combining outputs from multiple models to generate a single output. Ensemble learning is a common technique in the field of machine learning. The most famous techniques include voting, weighting, bagging and boosting~\cite{dietterich2000ensemble, breiman1996bagging, freund1996experiments}. Even though ensemble learning has clear advantage of being easy to implement, it assumes that the models participating have different architecture. As a result, ensemble learning often requires significant computations as each model processes the given input independently.
+Ensemble learning is a common technique in the field of machine learning which achieves greater performance by combining ouputs from multiple models which are independent. The most famous techniques are voting, weighting, bagging and boosting~\cite{dietterich2000ensemble, breiman1996bagging, freund1996experiments}. Even though ensemble learning is considered to be easy to implement, most of the ensemble techniques assume that each model has different architecture. As a result, ensemble learning often requires significant computations as it requires every model to process the input.
 
 \subsection{Multi-task Learning}
-On the other hand, multi-task learning are considered to be more relevant as it involves combining multiple models into a single model. The key assumption is that tasks that each model is designed for, are related. Therefore, sharing information throughout training will lead to increase in performance for each task. There are numbers of different techniques varying on how to share and how much to share among tasks. Two most common approaches are parameter sharing and feature sharing~\cite{ruder2017overview, Caruana1993MultitaskLA, duong2015low, lu2017fully}. Even with the similarity in architecture, multi-task learning is still quite different from our problem, as it still assumes the models for each task have different architecture.
+On the other hand, multi-task learning takes different approach; combining multiple models into a single model. The key assumption is that if tasks are related, sharing information among tasks throughout training will increase the performance on each task. There are numbers of variations depending on the assumptions. Key design choices include: what kind of information to share and how much information to share among tasks. Two main categories of multi-task learnings are parameter sharing and feature sharing~\cite{ruder2017overview, Caruana1993MultitaskLA, duong2015low, lu2017fully} which differ by type of the information that are shared. Even though multi-task learning has the similar architecture with the desired solution, it is hard to adopt it as a solution for our problem, due to it's assumption that the each task are distint.
 
 \subsection{Transfer Learning}
 
-Transfer learning shares the same assumption with multi-task learning; two tasks are related and knowledge share can improve the performance. However, the key difference between two problem is that transfer learning are designed to share the same model for different tasks. First, the model is pre-trained with different tasks and learns to select important features. Then the model is fine-tuned for the target task, putting all of its effort to achieve the target task with selected features~\cite{yosinski2014transferable}. It is found that transfer learning is quite powerful and applicable in various domains~\cite{raina2007self, egan2004effects, glorot2011domain}.
+Transfer learning is inspired by the same assumption as in multi-task learning; if tasks are related, sharing knowledge improves the performance. However, the key difference between two problem is that transfer learning are designed to share the same model architecture for different tasks. First, a model is pre-trained with a task and learns to select important features. Then the model is fine-tuned for the target task, putting all of its effort to produce the best result for the target task exploiting selected features~\cite{yosinski2014transferable}. With its archietectural flexibility, transfer learning has been adopted in wide domains and has shown its strengths~\cite{raina2007self, egan2004effects, glorot2011domain}.
 
-\section{Proposed Works}
+\section{Dynamic Model Construction with Class-level Transfer Learning}
 
 % \begin{figure*}[t]
 %     \centering
@@ -101,35 +103,93 @@ Transfer learning shares the same assumption with multi-task learning; two tasks
 %     \label{figure:change}
 % \end{figure*}
 
-\subsection{Class-level Dynamic Model Construction}
+\subsection{Approach}
 
-Among various techniques for multi-task learning, one of the successful approach is to use separate fully-connected layer for each task~\cite{huang2016mtnet, girshick2015fast, long2017learning}. After training, if one of the task is no longer necessary, corresponding fully-connected layers are removed saving computations during inference.
+In this section, I introduce how to achieve dynamic model construction which adopts to the change in target class set.
 
-In the case of transfer learning, it is found that a model can perform better when it is pre-trained with different task. Since it is using the same architecture, we can clearly see that there is no additional computation for an inference.
+One of the common technique used for multi-task learning is to use distinct fully-connected layer for each task~\cite{huang2016mtnet, girshick2015fast, long2017learning}. In this setting, each task is trained independently while weights for upstream layers are shared among classes. Once model is trained, a task can be disgarded from populating output if it is no longer necessary. This is achieved simply by removing corresponding fully-connected layer.
 
-Inspired by thewe two techniques, I propose class-level dynamic model construction (CLDMC). CLDMC can be achieved as following:
+Next consider a case of transfer learning. Pre-training a model and fine-tuning for target task can leads to increase in performance. There is no change in model architecture throughout this process. Therefore, fine-tuned model uses the same amount of computation as the model which is explicitly trained to accomplish the same task.
+
+Exploiting these charateristics in two distint domains, the proposed algorithm can be summarized as following:
 
 \begin{enumerate}
-	\item pre-train a model with multi-class data
-	\item freeze the model parameters and replace the last full-connected layer
-	\item fine-tune the last layer to classify each class against all the other classes
-	\item create a mapping from class to weights, where the weights in the mapping are the weights from the fine-tuned fully-connected layer which generate the output for the target class (Note that the weights for the negative class is dropped)
-	\item at the time of the inference, the last fully-connected layer is constructed dynamically by loading weights for each class from the mapping
+	\item pre-train a model as if it is targetting multi-classification problem
+	\item freeze the model parameters
+	\item fine-tune a model to obtain class-specific weights (step 4 $\sim$ 7)
+	\item construct a dataset whcih labels corresponding class as positive and the others as negative.
+	\item replace the last full-connected layer with two classes
+	\item fine-tune the last layer with the constructed data
+	\item store weights for positive class
+	\item at the time of the inference, the last fully-connected layer is dynamically constructed to classify the given set of class by loading corresponding weights obtained from fine-tuning
 \end{enumerate}
 
-Recall that the successful solution should satisfy the following conditions:
+For simplicity, I will call this algorithm as composing algorithm, the model trained for multi-class as base model, models constructed from step 4 $\sim$ 7 as fine-tuned models and the model constructed from the last step as composed model.
+
+\red{to be raised in introduction}
+
+Recall that the desired composed model should satisfy the following conditions:
+
 \begin{enumerate}
-	\item dynamic addition and removal of a class must be possible
-	\item minimal computation is desired for an inference
+	\item \red{preserve accuracy} 
+	\item Dynamic addition and removal of a class must be possible
+	\item Minimal computation is desired for an inference
 \end{enumerate}
 
-With CLDMC, addition of a class is very simply as it can be achieved by adding a new connections in the fully-connected layer with the corresponding weights. Unlike multi-task learning, where retraining of the whole model is unavoidable in the case of task addition, CLDMC only requires fine-tuned weights of for the desired class. Since the weights for each class are obtained from independent fine-tuning (step 3, 4), we do not need to retrain the weights for the existing classes. Similarly, removal of a class can be achieved by excluding the unnecessary class weights during the model construction in step 5.
+Addition and removal of a class is possible with the composing algorithm as it can be achieved simply by adding or removing corresponding fully-connected connections.
+With such a simply addition, retraining the base model is no longer necessary, which is unavoidable in the previous setting. Furthermore, note that even though a class does not contributes to step 1, it can be fine-tuned and added for step 8 as long as the same base model is used for fine-tuning.
 
-Note that the constructed model has the same amount of conputation as the baseline model which is designed and trained explcitly to detact the same set of class. In other words, there is no cost for adding or removing a class with CLDMC, satisfying the second criterion.
+From fine-tuning and composing, we only work with the last full-connected layer; when a model is fine-tuned for a class, the weights we store are from the fully-connected layer.
+Since we do not use weights trained for negative class, the architecture of the composed model is same as the base model, assuming that the composed model is designed to classify all classes which base model is trained for. Therefore, we can conclude that the composed model does not add any computations compared to the base model.
 
-\section{Class-level Transfer Learning(required condition)}
+\section{Accuracy Preservation}
 
-Unfortunately, due to the dynamic construction of the last layer, specific setting is required to preserve the accuracy for the constructed model
+The most challenging part with the composable model problem is assuring that the composed model suffers from the minimal change in accuracy. In this section, I discuss how such condition can be satisfied with the algorithm presented in the previous section.
+
+\subsection{Limiations with cross entropy loss}
+
+State of the art loss for multi-classification problem is cross entropy (CE) loss, which transforms output using softmax and calculates loss using negative log likelihood (NLL).
+Softmax and NLL loss are defined as following:
+
+\begin{align*}
+Softmax(y_i) &= \frac{e^{y_i}}{\sum_{j}e^{y_j}} \\
+NegativeLogLikelihood(y, t) & = -\frac{1}{N}\sum_{i=1}^N \left[ t_i \cdot \log y_i\right] \\
+\end{align*}
+
+where $x$ is the output of the network and $t$ is the target. target is one hot encoded vector as in common classification problem.
+
+Softmax is normalized logits computed from the output of the network. Therefore each index has value between zero and one and sum is designed to be one. Since multi-class classifier rely on the mutually exclusive assumption with about the classes, CE loss is the most suitable as it promotes the positive class while suppressing the negative classes.
+
+However, such assumption does not hold for composed model and CE loss can cause undeterministic behaviour with composed model. When CE loss is used throughout the composing algorithm, the loss which used in fine-tuning is computed with respect to the output of negative class. However, for a composed model, it is not fair to select the class with the greatest value as final class because model outputs for each class are not constructed with respect to each other.
+
+For example, let us say there are 3 classes: A, B, and C. For fine-tuning, we construct a dataset which has two classes: one for target class (positive class) and the other constructed with the other two classes (negative class). Once models are fine-tuned for each class, we have weights for positive class and negative class. For simplicity, positive weights are referred with lower case (a, b, and c) and negative weights with lower case with prime (a', b', and c'). During fine-tuning, loss is calculated in pairs: a -- a', b -- b', c -- c'. However, when we construct a composed model, the last layer consists of weights a, b and c. As a results, selecting the highest value as a final class is not a valid approach.
+
+\subsection{Binary cross entropy with sigmoid}
+
+We now understand the limiation of CE loss caused by mutually exclusive assumption among classes. To overcome such issue, I propose binary cross entropy (BCE) loss with sigmoid.
+
+\begin{align*}
+Sigmoid(y_i) &= \frac{1}{1 + e^{-x_i}} \\
+BinaryCrossEntropy(y, t) & = -\frac{1}{N}\sum_{i=1}^N \left[ t_i \cdot \log y_i + (1 - t_i) \cdot \log (1 - t_i) \right] \\
+\end{align*}
+
+Unlike softmax in CE Loss, the only input for sigmoid is the output from the network at the corresponding index. Furthermore, while CE loss considers mutually exclusive assumption as part of its calculation, BCE loss considers each index independently and is calculated with respect to its target. As a result, weights for each class in fine-tuned model no longer depend on other factors. This indicates that class with the highest output from composed model has the highest probability of being true class.
+
+It is found that multi-label classification has raised the same issue with CE loss~\cite{liu2017deep}. It is found that the independence guarantee provided by BCE loss with sigmoid is crucial for multi-label classification and enabled successful training of a model.
+
+\section{Experiments}
+
+In this experiments, I report empirical results for the above theory
+
+\subsection{Experimental Setup}
+
+
+
+
+\subsection{Experimental results}
+
+
+
 
 \begin{table*}[t]
     \centering
@@ -140,13 +200,13 @@ Unfortunately, due to the dynamic construction of the last layer, specific setti
 	        \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Loss function}} &
 	        \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Base model}} &
         	\multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Combined model}} &
-        	\multicolumn{10}{c}{\bf Fine tuned accuracy per class } \\
+        	\multicolumn{10}{c}{\bf Fine tuned model } \\
         	\cmidrule(lr){4-13}
 			& & & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 \\
 	        \midrule
-			softmax + nll & 91.4 & 82.41 & 98.5 & 98.9 & 96.3 & 96.5 & 96.2 & 94.8 & 98.0 & 96.3 & 95.1 & 93.0 \\
-			softmax + bce & 92.0 & 82.74 & 98.4 & 98.9 & 96.2 & 96.3 & 96.3 & 94.8 & 98.0 & 94.4 & 94.3 & 93.0 \\
-			sigmoid + bce & 92.2 & 84.24 & 98.5 & 99.0 & 96.3 & 96.6 & 96.7 & 95.2 & 98.0 & 96.1 & 95.2 & 93.8 \\
+			LogSoftmax + NLL & 95.79 & 87.02 & 99.01 & 99.30 & 98.18 & 98.24 & 98.29 & 97.84 & 98.62 & 97.47 & 96.51 & 96.98 \\
+			Softmax + BCE & 94.56 & 76.13 & 98.80 & 99.41 & 96.00 & 97.65 & 97.30 & 97.39 & 98.77 & 97.40 & 96.12 & 95.84 \\
+			Sigmoid + BCE & 95.23 & 95.03 & 99.41 & 99.19 & 97.19 & 97.52 & 98.29 & 97.62 & 98.64 & 97.91 & 97.30 & 96.56 \\
 	        \bottomrule[1pt]
 	    \end{tabular}
     }
@@ -154,50 +214,8 @@ Unfortunately, due to the dynamic construction of the last layer, specific setti
     \label{table:accuracy}
 \end{table*}
 
+\section{Case study}
 
-% & \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Device}} &
-        % \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Processor}} &
-        % \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Platform}} &
-        % \multicolumn{2}{c}{\bf \texttt{res8} } &
-        % \multicolumn{2}{c}{\bf \texttt{res8-narrow} } \\
-        % \cmidrule(lr){5-6}
-        % \cmidrule(lr){7-8}
-        % & & & & Lat. (ms) & Acc. (\%) & Lat. (ms) & Acc. (\%) \\
-        % \midrule
-        % \hspace{1mm}\multirow{5}{*}{GPU} & Desktop & GTX 1080 Ti & PyTorch  & 1 & 94.34 & 1 & 91.16 \\
-        % & Desktop & GTX 1080 Ti & Firefox & 12 & 94.06 & 10 & 90.91 \\
-        % & Macbook Pro (2017) & Intel Iris Plus 650 & Firefox  & 29 & 93.99 & 15 & 90.78 \\
-        % & Macbook Air (2013) & Intel HD 6000 & Firefox  & 34 & 93.99 & 19 & 90.78 \\
-        % & Galaxy S8 (2017) & Adreno 540 & Firefox & 60 & 94.06 & 43 & 88.96 \\
-        % \midrule
-        % \hspace{1mm}\multirow{6}{*}{CPU}
-        % & Desktop & i7-4790k (quad) & PyTorch  & 10 & 94.30 & 2 & 91.16 \\
-        % & Macbook Pro (2017) & i5-7287U (quad) & PyTorch  & 12 & 94.15 & 3 & 91.16 \\
-        % & Desktop & i7-4790k (quad) & Firefox  & 371 & 94.06 & 94 & 90.91 \\
-        % & Macbook Pro (2017) & i5-7287U (quad) & Firefox  & 361 & 93.99 & 107 & 90.78 \\
-        % & Macbook Air (2013) & i5-4260U (dual) & Firefox  & 485 & 93.99 & 115 & 90.78 \\
-        % & Galaxy S8 (2017) & Snapdragon 835 (octa) & Firefox & 1105 & 94.06 & 265 & 88.96 \\
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-\subsection{results}
-Perform an initial review of relevant literature. Has your problem, or one of similar nature, been considered before? By whom? What are the differences or limitations (if any)?
-
-\subsection{computational efficiency}
-Perform an initial review of relevant literature. Has your problem, or one of similar nature, been considered before? By whom? What are the differences or limitations (if any)?
 
 \section{Conclusion}
 In this section please concisely describe what you are going to achieve in this project. E.g., formulate your problem precisely (mathematically), present the technical challenges (if any), discuss the tools or datasets that you will build on, state your goals, and come up with a plan for evaluation.

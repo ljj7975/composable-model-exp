@@ -15,7 +15,7 @@ import utils.util as util
 from utils import color_print as cp
 
 
-EXP_LOSS = ['softmax_nll_loss', 'softmax_bce_loss', 'sigmoid_bce_loss']
+EXP_LOSS = ['logsoftmax_nll_loss', 'softmax_bce_loss', 'sigmoid_bce_loss']
 TARGET_CLASS = [0, 1, 2, 3, 4, 5, 6, 7 ,8, 9]
 
 def train_models(num_model, saved_model_dir):
@@ -31,7 +31,7 @@ def train_models(num_model, saved_model_dir):
         for loss in EXP_LOSS:
             model_dir = os.path.join(saved_model_dir, loss)
             indice = list(map(int, os.listdir(model_dir)))
-            next_index = str(max(indice) + 1)
+            next_index = str(max(indice) + 1) if indice else str(0)
             dest_dir = os.path.join(saved_model_dir, loss, next_index)
 
             cp.print_warning("training ", i+1, "th model with loss : ", loss)

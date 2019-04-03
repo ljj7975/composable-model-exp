@@ -8,8 +8,8 @@ def nll_loss(output, target):
 def bce_loss(output, target):
     return nn.BCELoss()(output, target)
 
-def softmax_nll_loss(output, target):
-    return nn.NLLLoss()(nn.Softmax()(output), target.max(1)[1].long())
+def logsoftmax_nll_loss(output, target):
+    return nn.NLLLoss()(nn.LogSoftmax()(output), target.max(1)[1].long())
 
 def softmax_bce_loss(output, target):
     return nn.BCELoss()(nn.Softmax()(output), target)
