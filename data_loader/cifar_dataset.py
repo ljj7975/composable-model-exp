@@ -145,7 +145,10 @@ class CIFAR10(data.Dataset):
             else:
                 unknown_idx |= (self.targets == class_index)
 
+        self.classes = [self.classes[e] for e in self.target_class]
+
         if self.unknown:
+            self.classes.append("unknown")
             data = self.data[unknown_idx]
             data_idx = np.arange(len(data))
 
@@ -163,11 +166,13 @@ class CIFAR10(data.Dataset):
             new_data = np.concatenate((new_data, data[data_idx]))
             new_targets = np.concatenate((new_targets, labels))
 
+        self.class_to_idx = {_class: i for i, _class in enumerate(self.classes)}
+
         print("< Dataset Summary >")
-        print("\tseed \t:", seed)
+        print("\tseed\t:", seed)
 
         for index, label in enumerate(self.target_class):
-            print("\t", label, "\t:", index, " (", data_size[index], ")")
+            print("\t", label, "-", self.classes[index], "\t:", index, " (", data_size[index], ")")
         if self.unknown:
             print("\tunknown\t:", len(self.target_class), " (", data_size[len(self.target_class)], ")")
         print("total data size : ", len(new_data))
@@ -187,9 +192,6 @@ class CIFAR10(data.Dataset):
                 data = pickle.load(infile, encoding='latin1')
             self.classes = data[self.meta['key']]
         self.class_to_idx = {_class: i for i, _class in enumerate(self.classes)}
-
-        print('classes', self.classes)
-        print('classes to index', self.class_to_idx)
 
     def __getitem__(self, index):
         """

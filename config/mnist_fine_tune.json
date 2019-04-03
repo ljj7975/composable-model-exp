@@ -5,6 +5,7 @@
     "model": {
         "type": "LeNet",
         "args": {
+            "unknown": true
         }
     },
     "data_loader": {
@@ -25,7 +26,7 @@
             "amsgrad": true
         }
     },
-    "loss": "bce_logits_loss",
+    "loss": "logsoftmax_nll_loss",
     "metrics": [
         "pred_acc"
     ],

@@ -5,6 +5,7 @@
     "model": {
         "type": "LeNet",
         "args": {
+            "unknown": true
         }
     },
     "data_loader": {

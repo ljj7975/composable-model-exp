@@ -147,7 +147,7 @@ class MNIST(data.Dataset):
 
 
         print("< Dataset Summary >")
-        print("\tseed \t:", seed)
+        print("\tseed\t:", seed)
 
         for index, label in enumerate(self.target_class):
             print("\t", label, "\t:", index, " (", data_size[index], ")")
