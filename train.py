@@ -105,7 +105,7 @@ def main(base_config, fine_tune_config, base_model, target_class, seed):
         fine_tune_model(fine_tune_config, base_model)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='keyword spotting convrnn')
+    parser = argparse.ArgumentParser(description='Train base model and fine tune')
     parser.add_argument('-bc', '--base_config', default=None, type=str,
                         help='base model config file path (default: None)')
     parser.add_argument('-fc', '--fine_tune_config', default=None, type=str,

@@ -118,7 +118,7 @@ def combine_model(model, fine_tuned_model_dir, target_class):
 def main(config, base_model, fine_tuned_model_dir, target_class, seed):
 
     config['metrics'] = ["pred_acc"]
-    
+
     model, data_loader, loss_fn, metrics = load_model(config, base_model, target_class, seed)
 
     if len(target_class) == 10:
@@ -137,7 +137,7 @@ def main(config, base_model, fine_tuned_model_dir, target_class, seed):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='PyTorch Template')
+    parser = argparse.ArgumentParser(description='Evaluate composed model')
 
     parser.add_argument('-b', '--base_model', default='saved/mnist_base', type=str,
                         help='path to dir containing base model (default: saved/mnist_base)')

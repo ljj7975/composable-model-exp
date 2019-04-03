@@ -5,6 +5,7 @@ exploring variations of convrnn for keyword spotting task
 
 ```
 python train.py -bc config/mnist_base.json -fc config/mnist_fine_tune.json
+python train.py -bc config/cifar10_base.json -fc config/cifar10_fine_tune.json
 ```
 
 ## finetune model

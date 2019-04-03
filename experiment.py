@@ -210,7 +210,7 @@ def evaluate_models(saved_model_dir, num_iter):
         results[loss]['fine_tuned_model'] = fine_tuned_model_acc[loss]
         results[loss]['combined_model'] = combined_model_acc[loss]
 
-    results['num_model'] = num_base_model    
+    results['num_model'] = num_base_model
     return results
 
 def main(train_flag, saved_model_dir, num_model, num_iter):
@@ -235,7 +235,7 @@ def main(train_flag, saved_model_dir, num_model, num_iter):
         pprint.pprint(results, stream=file)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='PyTorch Template')
+    parser = argparse.ArgumentParser(description='Train and evaluate composing algorithm')
 
     parser.add_argument('-m', '--models', type=str,
                         default="trained",
