@@ -1,16 +1,21 @@
 {
-    "name": "Mnist_LeNet",
+    "name": "kws_res15_base",
     "n_gpu": 1,
-    "keywords": ["yes", "no", "up", "down", "left", "right", "on", "off", "stop", "go"],
+    "n_class": 30,
 
     "model": {
-        "type": "VanillaConv",
-        "args": {}
+        "type": "ResNarrowNet",
+        "args": {
+            "num_classes": 30,
+            "n_layers": 13,
+            "n_feature_maps": 19,
+            "use_dilation": true
+        }
     },
     "data_loader": {
         "type": "GoogleKeywordDataLoader",
         "args":{
-            "data_dir": "/data/speech_commands",
+            "data_dir": "/media/brandon/SSD/data/speech_dataset",
             "batch_size": 128,
             "shuffle": true,
             "validation_split": 0.1,
@@ -18,26 +23,26 @@
         }
     },
     "optimizer": {
-        "type": "Adam",
+        "type": "SGD",
         "args":{
-            "lr": 0.001,
-            "weight_decay": 0,
-            "amsgrad": true
+            "lr": 0.1,
+            "weight_decay": 1e-4,
+            "momentum": 0.9
         }
     },
-    "loss": "cross_entropy_loss",
+    "loss": "logsoftmax_nll_loss",
     "metrics": [
-        "pred_acc", "top_pred_acc"
+        "pred_acc"
     ],
     "lr_scheduler": {
-        "type": "StepLR",
+        "type": "MultiStepLR",
         "args": {
-            "step_size": 50,
+            "milestones": [10, 20],
             "gamma": 0.1
         }
     },
     "trainer": {
-        "epochs": 100,
+        "epochs": 30,
         "save_dir": "saved/",
         "save_period": 1,
         "verbosity": 2,

@@ -23,7 +23,17 @@ class GoogleKeywordDataset(Dataset):
         self.targets = np.array([])
         self.audio_cache = {}
 
-        self.target_class = target_class if target_class else self.valid_keywords
+        if target_class:
+            assert len(target_class) > 0
+            if type(target_class[0]) == str:
+                self.target_class = target_class
+            else:
+                self.target_class = []
+                for index in target_class:
+                    self.target_class.append(self.valid_keywords[index])
+
+        else:
+            self.target_class = self.valid_keywords
         self.unknown = unknown
 
         if len(self.target_class) == len(self.valid_keywords):

@@ -24,8 +24,9 @@ class AudioPreprocessor(object):
             fmin=self.f_min,
             fmax=self.f_max)
         data[data > 0] = np.log(data[data > 0])
-        data = [np.matmul(self.dct_filters, x) for x in np.split(data, data.shape[1], axis=1)]
+        data = [self.dct_filters @ np.squeeze(x) for x in np.split(data, data.shape[1], axis=1)]
         data = np.array(data, order="F").astype(np.float32)
+        data = np.expand_dims(data, axis=0)
         return data
 
 class GoogleKeywordDataLoader(BaseDataLoader):
