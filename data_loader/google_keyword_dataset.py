@@ -6,13 +6,14 @@ from torch.utils.data.dataset import Dataset
 from utils import is_audio_file
 
 class GoogleKeywordDataset(Dataset):
-    def __init__(self, root, target_class=None, size_per_class=None,
+    def __init__(self, root, target_class=None, training=True, size_per_class=None, 
                  transform=None, unknown=False, silence=False, seed=0):
         self.silence_keyword = "__SILENCE__"
         self.unknown_keyword = "__UNKNOWN__"
         self.valid_keywords = ["bed", "bird", "cat", "dog", "down", "eight", "five", "four", "go", "happy", "house", "left", "marvin", "nine", "no", "off", "on", "one", "right", "seven", "sheila", "six", "stop", "three", "tree", "two", "up", "wow", "yes", "zero"]
         self.sample_rate = 16000
         self.cache_rate = 0.7
+        self.training_prob = 0.9
         np.random.seed(seed)
 
         self.data_dir = root
@@ -86,6 +87,7 @@ class GoogleKeywordDataset(Dataset):
             else:
                 class_index = self.class_to_idx[label]
                 audios = [os.path.join(path_name, file_name) for file_name in os.listdir(path_name)]
+                audios = self._select_data(audios, training, size_per_class)
                 np.random.shuffle(audios)
                 labels = np.zeros(len(audios)) + class_index
 
@@ -156,6 +158,19 @@ class GoogleKeywordDataset(Dataset):
         if self.transform is not None:
             data = self.transform(data)
         return data
+
+    def _select_data(self, data, training, size_per_class):
+        n_training = int(len(data) * self.training_prob)
+        if training:
+            data = data[:n_training]
+        else:
+            n_testing = len(data) - n_training
+            data = data[-n_testing:]
+
+        data = data[:size_per_class] if size_per_class else data
+
+        return data
+
 
     def __len__(self):
         return len(self.targets)

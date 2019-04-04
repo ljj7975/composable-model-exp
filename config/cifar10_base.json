@@ -7,10 +7,10 @@
         "type": "DenseNet",
         "args": {
             "num_classes": 10,
-            "depth": 100,
+            "depth": 40,
             "growthRate": 12,
-            "compressionRate": 2,
-            "dropRate": 0
+            "reduce": 1.0,
+            "bottleneck": false
         }
     },
     "data_loader": {
@@ -28,6 +28,7 @@
         "args":{
             "lr": 0.1,
             "weight_decay": 1e-4,
+            "nesterov": true,
             "momentum": 0.9
         }
     },

@@ -1,103 +1,106 @@
+import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
 from base import BaseModel
-from torch.autograd import Variable
-
-class Bottleneck(nn.Module):
-    def __init__(self, inplanes, expansion=4, growthRate=12, dropRate=0):
-        super(Bottleneck, self).__init__()
-        planes = expansion * growthRate
-        self.bn1 = nn.BatchNorm2d(inplanes)
-        self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(planes, growthRate, kernel_size=3, padding=1, bias=False)
-        self.relu = nn.ReLU(inplace=True)
-        self.dropRate = dropRate
-
-    def forward(self, x):
-        out = self.bn1(x)
-        out = self.relu(out)
-        out = self.conv1(out)
-        out = self.bn2(out)
-        out = self.relu(out)
-        out = self.conv2(out)
-        if self.dropRate > 0:
-            out = F.dropout(out, p=self.dropRate, training=self.training)
-
-        out = torch.cat((x, out), 1)
-
-        return out
-
 
 class BasicBlock(nn.Module):
-    def __init__(self, inplanes, expansion=1, growthRate=12, dropRate=0):
+    def __init__(self, in_planes, out_planes, dropRate=0.0):
         super(BasicBlock, self).__init__()
-        planes = expansion * growthRate
-        self.bn1 = nn.BatchNorm2d(inplanes)
-        self.conv1 = nn.Conv2d(inplanes, growthRate, kernel_size=3, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(in_planes)
         self.relu = nn.ReLU(inplace=True)
-        self.dropRate = dropRate
-
+        self.conv1 = nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=1,
+                               padding=1, bias=False)
+        self.droprate = dropRate
     def forward(self, x):
-        out = self.bn1(x)
-        out = self.relu(out)
-        out = self.conv1(out)
-        if self.dropRate > 0:
-            out = F.dropout(out, p=self.dropRate, training=self.training)
+        out = self.conv1(self.relu(self.bn1(x)))
+        if self.droprate > 0:
+            out = F.dropout(out, p=self.droprate, training=self.training)
+        return torch.cat([x, out], 1)
 
-        out = torch.cat((x, out), 1)
-
-        return out
-
-
-class Transition(nn.Module):
-    def __init__(self, inplanes, outplanes):
-        super(Transition, self).__init__()
-        self.bn1 = nn.BatchNorm2d(inplanes)
-        self.conv1 = nn.Conv2d(inplanes, outplanes, kernel_size=1,
-                               bias=False)
+class BottleneckBlock(nn.Module):
+    def __init__(self, in_planes, out_planes, dropRate=0.0):
+        super(BottleneckBlock, self).__init__()
+        inter_planes = out_planes * 4
+        self.bn1 = nn.BatchNorm2d(in_planes)
         self.relu = nn.ReLU(inplace=True)
-
+        self.conv1 = nn.Conv2d(in_planes, inter_planes, kernel_size=1, stride=1,
+                               padding=0, bias=False)
+        self.bn2 = nn.BatchNorm2d(inter_planes)
+        self.conv2 = nn.Conv2d(inter_planes, out_planes, kernel_size=3, stride=1,
+                               padding=1, bias=False)
+        self.droprate = dropRate
     def forward(self, x):
-        out = self.bn1(x)
-        out = self.relu(out)
-        out = self.conv1(out)
-        out = F.avg_pool2d(out, 2)
-        return out
+        out = self.conv1(self.relu(self.bn1(x)))
+        if self.droprate > 0:
+            out = F.dropout(out, p=self.droprate, inplace=False, training=self.training)
+        out = self.conv2(self.relu(self.bn2(out)))
+        if self.droprate > 0:
+            out = F.dropout(out, p=self.droprate, inplace=False, training=self.training)
+        return torch.cat([x, out], 1)
 
+class TransitionBlock(nn.Module):
+    def __init__(self, in_planes, out_planes, dropRate=0.0):
+        super(TransitionBlock, self).__init__()
+        self.bn1 = nn.BatchNorm2d(in_planes)
+        self.relu = nn.ReLU(inplace=True)
+        self.conv1 = nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=1,
+                               padding=0, bias=False)
+        self.droprate = dropRate
+    def forward(self, x):
+        out = self.conv1(self.relu(self.bn1(x)))
+        if self.droprate > 0:
+            out = F.dropout(out, p=self.droprate, inplace=False, training=self.training)
+        return F.avg_pool2d(out, 2)
+
+class DenseBlock(nn.Module):
+    def __init__(self, nb_layers, in_planes, growth_rate, block, dropRate=0.0):
+        super(DenseBlock, self).__init__()
+        self.layer = self._make_layer(block, in_planes, growth_rate, nb_layers, dropRate)
+    def _make_layer(self, block, in_planes, growth_rate, nb_layers, dropRate):
+        layers = []
+        for i in range(nb_layers):
+            layers.append(block(in_planes+i*growth_rate, growth_rate, dropRate))
+        return nn.Sequential(*layers)
+    def forward(self, x):
+        return self.layer(x)
 
 class DenseNet(BaseModel):
-    def __init__(self, depth=22, block=Bottleneck, dropRate=0, num_classes=10, growthRate=12, compressionRate=2):
+    def __init__(self, num_classes, depth=40, growth_rate=12,
+                 reduction=0.5, bottleneck=True, dropRate=0.0):
         super(DenseNet, self).__init__()
-
-        assert (depth - 4) % 3 == 0, 'depth should be 3n+4'
-        n = (depth - 4) / 3 if block == BasicBlock else (depth - 4) // 6
-
-        self.growthRate = growthRate
-        self.dropRate = dropRate
         self.output_size = num_classes
 
-        # self.inplanes is a global variable used across multiple
-        # helper functions
-        self.inplanes = growthRate * 2 
-        self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=3, padding=1, bias=False)
-        self.dense1 = self._make_denseblock(block, n)
-        self.trans1 = self._make_transition(compressionRate)
-        self.dense2 = self._make_denseblock(block, n)
-        self.trans2 = self._make_transition(compressionRate)
-        self.dense3 = self._make_denseblock(block, n)
-        self.bn = nn.BatchNorm2d(self.inplanes)
+        in_planes = 2 * growth_rate
+        n = (depth - 4) / 3
+        if bottleneck == True:
+            n = n/2
+            block = BottleneckBlock
+        else:
+            block = BasicBlock
+        n = int(n)
+        # 1st conv before any dense block
+        self.conv1 = nn.Conv2d(3, in_planes, kernel_size=3, stride=1,
+                               padding=1, bias=False)
+        # 1st block
+        self.block1 = DenseBlock(n, in_planes, growth_rate, block, dropRate)
+        in_planes = int(in_planes+n*growth_rate)
+        self.trans1 = TransitionBlock(in_planes, int(math.floor(in_planes*reduction)), dropRate=dropRate)
+        in_planes = int(math.floor(in_planes*reduction))
+        # 2nd block
+        self.block2 = DenseBlock(n, in_planes, growth_rate, block, dropRate)
+        in_planes = int(in_planes+n*growth_rate)
+        self.trans2 = TransitionBlock(in_planes, int(math.floor(in_planes*reduction)), dropRate=dropRate)
+        in_planes = int(math.floor(in_planes*reduction))
+        # 3rd block
+        self.block3 = DenseBlock(n, in_planes, growth_rate, block, dropRate)
+        in_planes = int(in_planes+n*growth_rate)
+        # global average pooling and classifier
+        self.bn1 = nn.BatchNorm2d(in_planes)
         self.relu = nn.ReLU(inplace=True)
-        self.avgpool = nn.AvgPool2d(8)
-        self.fc = nn.Linear(self.inplanes, num_classes)
+        self.fc = nn.Linear(in_planes, num_classes)
+        self.in_planes = in_planes
 
-        self.old_fcs = {}
-        self.swap_counter = 0
-        self.__set_fc_id__()
-
-        # Weight initialization
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
@@ -105,22 +108,23 @@ class DenseNet(BaseModel):
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
+            elif isinstance(m, nn.Linear):
+                m.bias.data.zero_()
 
-    def _make_denseblock(self, block, blocks):
-        layers = []
-        for i in range(blocks):
-            # Currently we fix the expansion ratio as the default value
-            layers.append(block(self.inplanes, growthRate=self.growthRate, dropRate=self.dropRate))
-            self.inplanes += self.growthRate
+        self.old_fcs = {}
+        self.swap_counter = 0
+        self.__set_fc_id__()
 
-        return nn.Sequential(*layers)
+    def forward(self, x):
+        out = self.conv1(x)
+        out = self.trans1(self.block1(out))
+        out = self.trans2(self.block2(out))
+        out = self.block3(out)
+        out = self.relu(self.bn1(out))
+        out = F.avg_pool2d(out, 8)
+        out = out.view(-1, self.in_planes)
+        return self.fc(out)
 
-    def _make_transition(self, compressionRate):
-        inplanes = self.inplanes
-        outplanes = int(math.floor(self.inplanes // compressionRate))
-        self.inplanes = outplanes
-        return Transition(inplanes, outplanes)
-    
     def freeze(self):
         for param in self.parameters():
             param.requires_grad = False
@@ -152,19 +156,3 @@ class DenseNet(BaseModel):
     def __load_fcs__(self, fc_id):
         assert self.old_fcs[fc_id]
         self.fc = self.old_fcs[fc_id]['fc']
-
-    def forward(self, x):
-        x = self.conv1(x)
-
-        x = self.trans1(self.dense1(x)) 
-        x = self.trans2(self.dense2(x)) 
-        x = self.dense3(x)
-        x = self.bn(x)
-        x = self.relu(x)
-
-        x = self.avgpool(x)
-        x = x.view(x.size(0), -1)
-        x = self.fc(x)
-
-        return x
-        

@@ -1,5 +1,5 @@
 {
-    "name": "kws_res8_fine_tune",
+    "name": "kws_res8_narrow_fine_tune",
     "n_gpu": 1,
     "n_class": 30,
 
@@ -16,7 +16,7 @@
     "data_loader": {
         "type": "GoogleKeywordDataLoader",
         "args":{
-            "data_dir": "/media/brandon/SSD/data/speech_dataset",
+            "data_dir": "/data/speech_dataset",
             "batch_size": 128,
             "shuffle": true,
             "validation_split": 0.1,

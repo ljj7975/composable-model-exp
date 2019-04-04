@@ -44,6 +44,7 @@ class GoogleKeywordDataLoader(BaseDataLoader):
         self.dataset = GoogleKeywordDataset(
                     self.data_dir,
                     target_class=target_class,
+                    training=training,
                     size_per_class=size_per_class,
                     transform=self.audioProcessor.compute_mfccs,
                     unknown=unknown,

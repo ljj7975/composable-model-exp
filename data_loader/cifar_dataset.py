@@ -172,7 +172,7 @@ class CIFAR10(data.Dataset):
         print("total data size : ", len(new_data))
 
         self.data = new_data
-        self.targets = new_targets.astype(np.int_)
+        self.targets = new_targets.long()
 
     def _load_meta(self):
         path = os.path.join(self.root, self.base_folder, self.meta['filename'])

@@ -102,16 +102,16 @@ def combine_model(model, fine_tuned_model_dir, target_class):
             checkpoint = torch.load(latest_best_model)
         state_dict = checkpoint['state_dict']
 
-        weight_list.append(state_dict["fc2.weight"][0])
-        bias_list.append(state_dict["fc2.bias"][0])
+        weight_list.append(state_dict["fc.weight"][0])
+        bias_list.append(state_dict["fc.bias"][0])
 
     weight = torch.stack(weight_list)
     bias = torch.stack(bias_list)
 
     model.swap_fc(len(target_class))
 
-    model.fc2.weight = torch.nn.Parameter(weight)
-    model.fc2.bias = torch.nn.Parameter(bias)
+    model.fc.weight = torch.nn.Parameter(weight)
+    model.fc.bias = torch.nn.Parameter(bias)
 
     return model
 

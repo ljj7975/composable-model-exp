@@ -1,5 +1,5 @@
 {
-    "name": "kws_res26_fine_tune",
+    "name": "kws_res26_narrow_fine_tune",
     "n_gpu": 1,
     "n_class": 30,
 
