@@ -19,7 +19,7 @@ class Trainer(BaseTrainer):
         self.valid_data_loader = valid_data_loader
         self.do_validation = self.valid_data_loader is not None
         self.lr_scheduler = lr_scheduler
-        self.log_step = int(np.sqrt(data_loader.batch_size))
+        self.log_step = int(len(data_loader)/10)
 
     def _eval_metrics(self, output, target):
         acc_metrics = np.zeros(len(self.metrics))
