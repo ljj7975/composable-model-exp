@@ -12,8 +12,6 @@ class MnistDataLoader(BaseDataLoader):
             transforms.Normalize((0.1307,), (0.3081,))
             ])
 
-        if not os.path.isdir(data_dir):
-            data_dir = '/data/mnist'
         self.data_dir = data_dir
         self.target_class = target_class
         self.unknown = unknown
