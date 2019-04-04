@@ -264,6 +264,11 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--exp_type', default="mnist", type=str,
                         choices=["mnist", "cifar10", "cifar100"],
                         help="type of exp (default: mnist)")
+    parser.add_argument('-d', '--device', default=None, type=str,
+                    help='indices of GPUs to enable (default: all)')
 
     args = parser.parse_args()
+
+    if args.device:
+        os.environ["CUDA_VISIBLE_DEVICES"] = args.device
     main(args.exp_type, args.train, args.models, args.num_model, args.num_iter)
