@@ -77,6 +77,7 @@ class DenseNet(BaseModel):
 
         self.growthRate = growthRate
         self.dropRate = dropRate
+        self.output_size = num_classes
 
         # self.inplanes is a global variable used across multiple
         # helper functions
@@ -91,6 +92,10 @@ class DenseNet(BaseModel):
         self.relu = nn.ReLU(inplace=True)
         self.avgpool = nn.AvgPool2d(8)
         self.fc = nn.Linear(self.inplanes, num_classes)
+
+        self.old_fcs = {}
+        self.swap_counter = 0
+        self.__set_fc_id__()
 
         # Weight initialization
         for m in self.modules():
@@ -115,7 +120,38 @@ class DenseNet(BaseModel):
         outplanes = int(math.floor(self.inplanes // compressionRate))
         self.inplanes = outplanes
         return Transition(inplanes, outplanes)
+    
+    def freeze(self):
+        for param in self.parameters():
+            param.requires_grad = False
 
+    def swap_fc(self, num_classes, fc_id=None):
+        self.__store_fcs__()
+
+        if not fc_id:
+            # new layers
+            self.fc = nn.Linear(self.inplanes, num_classes)
+            fc_id = self.__set_fc_id__()
+        else:
+            self.__load_fcs__(fc_id)
+
+        self.output_size = self.fc.out_features
+
+        return fc_id
+
+    def __set_fc_id__(self):
+        fc_id = self.swap_counter
+        self.fc.id = fc_id
+        self.swap_counter += 1
+        return fc_id
+
+    def __store_fcs__(self):
+        self.old_fcs[self.fc.id] = {}
+        self.old_fcs[self.fc.id]['fc'] = self.fc
+
+    def __load_fcs__(self, fc_id):
+        assert self.old_fcs[fc_id]
+        self.fc = self.old_fcs[fc_id]['fc']
 
     def forward(self, x):
         x = self.conv1(x)

@@ -20,19 +20,17 @@ class FineTuner(BaseTrainer):
         self.data_loader = data_loader
         self.valid_data_loader = valid_data_loader
         self.do_validation = self.valid_data_loader is not None
-        self.log_step = int(np.sqrt(data_loader.batch_size))
+        self.log_step = int(len(data_loader)/10)
 
         self.logger.info("Loading checkpoint: {} ...".format(base_model))
         checkpoint = torch.load(base_model)
 
         self.start_epoch = checkpoint['epoch'] + 1
 
-        # TODO :: play around with lr
-        # print("lr steep", self.lr_scheduler.get_lr())
-
         model.load_state_dict(checkpoint['state_dict'])
 
         self.target_class = target_class
+        self.model.freeze()
         self.fc_id = model.swap_fc(len(target_class) + 1)
 
         # setup GPU device if available, move model into configured device
@@ -40,8 +38,6 @@ class FineTuner(BaseTrainer):
         self.model = model.to(self.device)
         if len(device_ids) > 1:
             self.model = torch.nn.DataParallel(model, device_ids=device_ids)
-
-        self.model.freeze()
 
         # build optimizer, learning rate scheduler. delete every lines containing lr_scheduler for disabling scheduler
         trainable_params = filter(lambda p: p.requires_grad, self.model.parameters())

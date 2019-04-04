@@ -26,13 +26,7 @@ class LeNet(BaseModel):
         return x
 
     def freeze(self):
-        for param in self.conv1.parameters():
-            param.requires_grad = False
-
-        for param in self.conv2.parameters():
-            param.requires_grad = False
-
-        for param in self.fc1.parameters():
+        for param in self.parameters():
             param.requires_grad = False
 
     def swap_fc(self, num_classes, fc_id=None):
@@ -54,7 +48,6 @@ class LeNet(BaseModel):
         self.fc2.id = fc_id
         self.swap_counter += 1
         return fc_id
-
 
     def __store_fcs__(self):
         self.old_fcs[self.fc2.id] = {}
