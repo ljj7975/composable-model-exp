@@ -25,7 +25,7 @@ class FineTuner(BaseTrainer):
         self.logger.info("Loading checkpoint: {} ...".format(base_model))
         checkpoint = torch.load(base_model)
 
-        self.start_epoch = checkpoint['epoch'] + 1
+        self.start_epoch = checkpoint['config']['trainer']['epochs'] + 1
 
         model.load_state_dict(checkpoint['state_dict'])
 

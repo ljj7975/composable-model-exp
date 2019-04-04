@@ -18,10 +18,10 @@ from utils import color_print as cp
 EXP_LOSS = ['logsoftmax_nll_loss', 'softmax_bce_loss', 'sigmoid_bce_loss']
 TARGET_CLASS = [0, 1, 2, 3, 4, 5, 6, 7 ,8, 9]
 
-def train_models(num_model, saved_model_dir):
+def train_models(exp_type, num_model, saved_model_dir):
 
-    base_config = json.load(open('config/mnist_base.json'))
-    fine_tune_config = json.load(open('config/mnist_fine_tune.json'))
+    base_config = json.load(open('config/{}_base.json'.format(exp_type)))
+    fine_tune_config = json.load(open('config/{}_fine_tune.json'.format(exp_type)))
 
     fine_tune_config['trainer']['epochs'] = fine_tune_config['trainer']['epochs'] + base_config['trainer']['epochs']
 
@@ -31,8 +31,9 @@ def train_models(num_model, saved_model_dir):
         for loss in EXP_LOSS:
             model_dir = os.path.join(saved_model_dir, loss)
             indice = list(map(int, os.listdir(model_dir)))
-            next_index = str(max(indice) + 1) if indice else str(0)
-            dest_dir = os.path.join(saved_model_dir, loss, next_index)
+            next_index = max(indice) + 1 if indice else 0
+
+            dest_dir = os.path.join(saved_model_dir, loss, str(next_index))
 
             cp.print_warning("training ", i+1, "th model with loss : ", loss)
             cp.print_warning("destiation :", dest_dir)
@@ -43,15 +44,32 @@ def train_models(num_model, saved_model_dir):
             base_config['loss'] = loss
             fine_tune_config['loss'] = loss
 
-            base_model = train.train_base_model(base_config)
+            if next_index > 0:
+                prev_index = next_index - 1
+                prev_model_dir = os.path.join(saved_model_dir, loss, str(prev_index))
+
+                copy_src_dir = os.path.join(prev_model_dir, base_config['name'])
+                copy_dest_dir = os.path.join('saved', '{}_base'.format(exp_type))
+
+                cp.print_warning("copy the base model from ", copy_src_dir, "to", copy_dest_dir)
+                shutil.copytree(copy_src_dir, copy_dest_dir)
+
+                best_base_model = max(os.listdir(copy_dest_dir))
+                base_model = os.path.join(copy_dest_dir, best_base_model, 'model_best.pth')
+
+                cp.print_warning("loaded base model", base_model)
+
+            else:
+                base_model = train.train_base_model(base_config)
 
             for target in TARGET_CLASS:
                 fine_tune_config['target_class'] = [target]
                 train.fine_tune_model(fine_tune_config, base_model)
 
+            cp.print_warning("moving saved folder to", dest_dir)
             shutil.move('saved', dest_dir)
 
-def evaluate_base_model(saved_model_dir):
+def evaluate_base_model(exp_type, saved_model_dir):
     mapping = {}
 
     for loss in EXP_LOSS:
@@ -60,7 +78,7 @@ def evaluate_base_model(saved_model_dir):
 
         model_dir = os.path.join(saved_model_dir, loss)
         for i in tqdm(os.listdir(model_dir)):
-            base_model_dir = os.path.join(saved_model_dir, loss, i, 'mnist_base')
+            base_model_dir = os.path.join(saved_model_dir, loss, i, '{}_base'.format(exp_type))
             latest_model = max(os.listdir(base_model_dir))
             base_model = os.path.join(base_model_dir, latest_model, 'model_best.pth')
             cp.print_warning("base model : ", base_model)
@@ -86,7 +104,7 @@ def evaluate_base_model(saved_model_dir):
 
     return len(os.listdir(model_dir)), mapping
 
-def evaluate_fine_tuned_model(saved_model_dir):
+def evaluate_fine_tuned_model(exp_type, saved_model_dir):
     mapping = {}
 
     for loss in EXP_LOSS:
@@ -95,7 +113,7 @@ def evaluate_fine_tuned_model(saved_model_dir):
 
         model_dir = os.path.join(saved_model_dir, loss)
         for i in tqdm(os.listdir(model_dir)):
-            fine_tuned_model_dir = os.path.join(saved_model_dir, loss, i, 'mnist_fine_tune')
+            fine_tuned_model_dir = os.path.join(saved_model_dir, loss, i, '{}_fine_tune'.format(exp_type))
 
             for c in os.listdir(fine_tuned_model_dir):
                 class_model_dir = os.path.join(fine_tuned_model_dir, c)
@@ -130,7 +148,7 @@ def evaluate_fine_tuned_model(saved_model_dir):
 
     return num_model, mapping
 
-def evaluate_combined_model(saved_model_dir, num_iter):
+def evaluate_combined_model(exp_type, saved_model_dir, num_iter):
     mapping = {}
 
     for loss in EXP_LOSS:
@@ -139,8 +157,8 @@ def evaluate_combined_model(saved_model_dir, num_iter):
 
         model_dir = os.path.join(saved_model_dir, loss)
         for i in tqdm(os.listdir(model_dir)):
-            base_model_dir = os.path.join(saved_model_dir, loss, i, 'mnist_base')
-            fine_tuned_model_dir = os.path.join(saved_model_dir, loss, i, 'mnist_fine_tune')
+            base_model_dir = os.path.join(saved_model_dir, loss, i, '{}_base'.format(exp_type))
+            fine_tuned_model_dir = os.path.join(saved_model_dir, loss, i, '{}_fine_tune'.format(exp_type))
             latest_model = max(os.listdir(base_model_dir))
             base_model = os.path.join(base_model_dir, latest_model, 'model_best.pth')
             cp.print_warning("base model for combined model : ", base_model)
@@ -150,8 +168,6 @@ def evaluate_combined_model(saved_model_dir, num_iter):
                 config = torch.load(base_model, map_location='cpu')['config']
             else:
                 config = torch.load(base_model)['config']
-
-            pprint.pprint(config)
 
             config['metrics'] = ["pred_acc"]
             ordered_class = TARGET_CLASS.copy()
@@ -186,16 +202,16 @@ def evaluate_combined_model(saved_model_dir, num_iter):
     return num_model, mapping
 
 
-def evaluate_models(saved_model_dir, num_iter):
-    num_base_model, base_model_acc = evaluate_base_model(saved_model_dir)
+def evaluate_models(exp_type, saved_model_dir, num_iter):
+    num_base_model, base_model_acc = evaluate_base_model(exp_type, saved_model_dir)
     cp.print_progress("< base model acc >")
     cp.print_progress(json.dumps(base_model_acc, indent=4, separators=(': ')))
 
-    num_fine_tuned_model, fine_tuned_model_acc = evaluate_fine_tuned_model(saved_model_dir)
+    num_fine_tuned_model, fine_tuned_model_acc = evaluate_fine_tuned_model(exp_type, saved_model_dir)
     cp.print_progress("< fine tuned model acc >")
     cp.print_progress(json.dumps(fine_tuned_model_acc, indent=4, separators=(': ')))
 
-    num_combined_model, combined_model_acc = evaluate_combined_model(saved_model_dir, num_iter)
+    num_combined_model, combined_model_acc = evaluate_combined_model(exp_type, saved_model_dir, num_iter)
     cp.print_progress("< combined model acc >")
     cp.print_progress(json.dumps(combined_model_acc, indent=4, separators=(': ')))
 
@@ -213,7 +229,7 @@ def evaluate_models(saved_model_dir, num_iter):
     results['num_model'] = num_base_model
     return results
 
-def main(train_flag, saved_model_dir, num_model, num_iter):
+def main(exp_type, train_flag, saved_model_dir, num_model, num_iter):
     util.makedir_exist_ok(saved_model_dir)
 
     for loss in EXP_LOSS:
@@ -221,9 +237,9 @@ def main(train_flag, saved_model_dir, num_model, num_iter):
         util.makedir_exist_ok(dest_dir)
 
     if train_flag:
-        train_models(num_model, saved_model_dir)
+        train_models(exp_type, num_model, saved_model_dir)
 
-    results = evaluate_models(saved_model_dir, num_iter)
+    results = evaluate_models(exp_type, saved_model_dir, num_iter)
 
     cp.print_warning("< EXP RESULTS >")
     for loss in EXP_LOSS:
@@ -239,10 +255,15 @@ if __name__ == '__main__':
 
     parser.add_argument('-m', '--models', type=str,
                         default="trained",
-                        help='path to dir contnaining trained models (default: saved)')
+                        help='path to dir contnaining trained models (default: trained)')
     parser.add_argument('-t', '--train', help="train models", action='store_true')
-    parser.add_argument('-nm', '--num_model', default=5, type=int, help="number of models to train (default: 5)")
-    parser.add_argument('-ni', '--num_iter', default=10, type=int, help="number of iteration for combined model evaluation (default: 10)")
+    parser.add_argument('-nm', '--num_model', default=5, type=int,
+                        help="number of models to train (default: 5)")
+    parser.add_argument('-ni', '--num_iter', default=10, type=int,
+                        help="number of iteration for combined model evaluation (default: 10)")
+    parser.add_argument('-e', '--exp_type', default="mnist", type=str,
+                        choices=["mnist", "cifar10", "cifar100"],
+                        help="type of exp (default: mnist)")
 
     args = parser.parse_args()
-    main(args.train, args.models, args.num_model, args.num_iter)
+    main(args.exp_type, args.train, args.models, args.num_model, args.num_iter)
