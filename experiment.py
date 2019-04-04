@@ -16,7 +16,7 @@ from utils import color_print as cp
 
 
 EXP_LOSS = ['logsoftmax_nll_loss', 'softmax_bce_loss', 'sigmoid_bce_loss']
-TARGET_CLASS = [0, 1, 2, 3, 4, 5, 6, 7 ,8, 9]
+TARGET_CLASS = []
 
 def train_models(exp_type, num_model, saved_model_dir):
 
@@ -112,7 +112,7 @@ def evaluate_fine_tuned_model(exp_type, saved_model_dir):
         sum = [0] * len(TARGET_CLASS)
 
         model_dir = os.path.join(saved_model_dir, loss)
-        for i in tqdm(os.listdir(model_dir)):
+        for i in os.listdir(model_dir):
             fine_tuned_model_dir = os.path.join(saved_model_dir, loss, i, '{}_fine_tune'.format(exp_type))
 
             for c in os.listdir(fine_tuned_model_dir):
@@ -172,7 +172,7 @@ def evaluate_combined_model(exp_type, saved_model_dir, num_iter):
             config['metrics'] = ["pred_acc"]
             ordered_class = TARGET_CLASS.copy()
 
-            for _ in tqdm(range(num_iter)):
+            for _ in range(num_iter):
                 random.shuffle(ordered_class)
 
                 target_class = []
@@ -230,7 +230,12 @@ def evaluate_models(exp_type, saved_model_dir, num_iter):
     return results
 
 def main(exp_type, train_flag, saved_model_dir, num_model, num_iter):
+    global TARGET_CLASS
     util.makedir_exist_ok(saved_model_dir)
+
+    base_config = json.load(open('config/{}_base.json'.format(exp_type)))
+    TARGET_CLASS = np.arange(base_config['n_class']).tolist()
+    cp.print_warning("target class :", TARGET_CLASS)
 
     for loss in EXP_LOSS:
         dest_dir = os.path.join(saved_model_dir, loss)
@@ -262,10 +267,10 @@ if __name__ == '__main__':
     parser.add_argument('-ni', '--num_iter', default=10, type=int,
                         help="number of iteration for combined model evaluation (default: 10)")
     parser.add_argument('-e', '--exp_type', default="mnist", type=str,
-                        choices=["mnist", "cifar10", "cifar100"],
+                        choices=["mnist", "cifar10", "cifar100", "kws_res8_narrow", "kws_res15_narrow", "kws_res26_narrow"],
                         help="type of exp (default: mnist)")
     parser.add_argument('-d', '--device', default=None, type=str,
-                    help='indices of GPUs to enable (default: all)')
+                        help='indices of GPUs to enable (default: all)')
 
     args = parser.parse_args()
 

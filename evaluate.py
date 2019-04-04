@@ -102,16 +102,16 @@ def combine_model(model, fine_tuned_model_dir, target_class):
             checkpoint = torch.load(latest_best_model)
         state_dict = checkpoint['state_dict']
 
-        weight_list.append(state_dict["fc2.weight"][0])
-        bias_list.append(state_dict["fc2.bias"][0])
+        weight_list.append(state_dict["fc.weight"][0])
+        bias_list.append(state_dict["fc.bias"][0])
 
     weight = torch.stack(weight_list)
     bias = torch.stack(bias_list)
 
     model.swap_fc(len(target_class))
 
-    model.fc2.weight = torch.nn.Parameter(weight)
-    model.fc2.bias = torch.nn.Parameter(bias)
+    model.fc.weight = torch.nn.Parameter(weight)
+    model.fc.bias = torch.nn.Parameter(bias)
 
     return model
 
@@ -147,8 +147,8 @@ if __name__ == '__main__':
                         default="saved/mnist_fine_tune",
                         help='path to dir contnaining fine tuned model (default: saved/mnist_fine_tune)')
     parser.add_argument('-t', '--target_class', nargs='+', type=int,
-                        help="target class to fine tune (default: all 10 classes)",
-                        default=[0,1,2,3,4,5,6,7,8,9])
+                        help="target class to fine tune (default: all classes)",
+                        default=None)
     parser.add_argument('-s', '--seed', default=None, type=int, help="random seed")
 
     args = parser.parse_args()
@@ -165,5 +165,8 @@ if __name__ == '__main__':
 
     if args.device:
         os.environ["CUDA_VISIBLE_DEVICES"]=args.device
+
+    if args.target_class is None:
+        args.target_class = np.arange(config['n_class']).tolist()
 
     main(config, base_model, args.fine_tuned_model_dir, args.target_class, args.seed)

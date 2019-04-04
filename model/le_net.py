@@ -11,7 +11,7 @@ class LeNet(BaseModel):
         self.conv2 = nn.Conv2d(5, 5, kernel_size=5)
         self.conv2_drop = nn.Dropout2d()
         self.fc1 = nn.Linear(80, 50)
-        self.fc2 = nn.Linear(50, num_classes)
+        self.fc = nn.Linear(50, num_classes)
         self.old_fcs = {}
         self.swap_counter = 0
         self.__set_fc_id__()
@@ -22,7 +22,7 @@ class LeNet(BaseModel):
         x = x.view(-1, 80)
         x = F.relu(self.fc1(x))
         x = F.dropout(x, training=self.training)
-        x = self.fc2(x)
+        x = self.fc(x)
         return x
 
     def freeze(self):
@@ -34,25 +34,25 @@ class LeNet(BaseModel):
 
         if not fc_id:
             # new layers
-            self.fc2 = nn.Linear(50, num_classes)
+            self.fc = nn.Linear(50, num_classes)
             fc_id = self.__set_fc_id__()
         else:
             self.__load_fcs__(fc_id)
 
-        self.output_size = self.fc2.out_features
+        self.output_size = self.fc.out_features
 
         return fc_id
 
     def __set_fc_id__(self):
         fc_id = self.swap_counter
-        self.fc2.id = fc_id
+        self.fc.id = fc_id
         self.swap_counter += 1
         return fc_id
 
     def __store_fcs__(self):
-        self.old_fcs[self.fc2.id] = {}
-        self.old_fcs[self.fc2.id]['fc2'] = self.fc2
+        self.old_fcs[self.fc.id] = {}
+        self.old_fcs[self.fc.id]['fc'] = self.fc
 
     def __load_fcs__(self, fc_id):
         assert self.old_fcs[fc_id]
-        self.fc2 = self.old_fcs[fc_id]['fc2']
+        self.fc = self.old_fcs[fc_id]['fc']
