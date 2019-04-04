@@ -8,7 +8,7 @@ def pred_acc(output, target):
         correct += torch.sum(pred == target).item()
     return correct / len(target)
 
-def top_pred_acc(output, target, k=3):
+def top_pred_acc(output, target, k=5):
     with torch.no_grad():
         pred = torch.topk(output, k, dim=1)[1]
         assert pred.shape[0] == len(target)

@@ -90,7 +90,7 @@ def print_setting(data_loader, valid_data_loader, model, loss_fn, metrics, optim
 
     if valid_data_loader: cp.print_bold('VALID DATASET\n', valid_data_loader, 'size :', len(valid_data_loader.dataset))
 
-    if model: cp.print_bold('MODEL\n', model)
+    # if model: cp.print_bold('MODEL\n', model)
 
     if loss_fn: cp.print_bold('LOSS FUNCTION\n', loss_fn.__name__)
 
