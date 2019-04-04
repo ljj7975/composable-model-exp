@@ -1,6 +1,7 @@
 {
     "name": "mnist_fine_tune",
     "n_gpu": 1,
+    "n_class": 10,
 
     "model": {
         "type": "LeNet",

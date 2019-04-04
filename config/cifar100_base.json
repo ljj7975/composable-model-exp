@@ -1,6 +1,7 @@
 {
     "name": "cifar100_base",
     "n_gpu": 1,
+    "n_class": 100,
 
     "model": {
         "type": "DenseNet",

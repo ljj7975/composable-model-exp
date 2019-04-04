@@ -16,7 +16,7 @@ from utils import color_print as cp
 
 
 EXP_LOSS = ['logsoftmax_nll_loss', 'softmax_bce_loss', 'sigmoid_bce_loss']
-TARGET_CLASS = [0, 1, 2, 3, 4, 5, 6, 7 ,8, 9]
+TARGET_CLASS = []
 
 def train_models(exp_type, num_model, saved_model_dir):
 
@@ -230,7 +230,12 @@ def evaluate_models(exp_type, saved_model_dir, num_iter):
     return results
 
 def main(exp_type, train_flag, saved_model_dir, num_model, num_iter):
+    global TARGET_CLASS
     util.makedir_exist_ok(saved_model_dir)
+
+    base_config = json.load(open('config/{}_base.json'.format(exp_type)))
+    TARGET_CLASS = np.arange(base_config['n_class']).tolist()
+    cp.print_warning("target class :", TARGET_CLASS)
 
     for loss in EXP_LOSS:
         dest_dir = os.path.join(saved_model_dir, loss)
