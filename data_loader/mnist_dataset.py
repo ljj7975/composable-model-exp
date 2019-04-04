@@ -54,11 +54,14 @@ class MNIST(data.Dataset):
         warnings.warn("test_data has been renamed data")
         return self.data
 
-    def __init__(self, root, target_class=[0,1,2,3,4,5,6,7,8,9], size_per_class=None, train=True, transform=None, target_transform=None, download=False, unknown=False, seed=0):
+    def __init__(self, root, target_class=None, size_per_class=None, train=True,
+                 transform=None, target_transform=None, download=False,
+                 unknown=False, seed=0):
         self.root = os.path.expanduser(root)
         self.transform = transform
         self.target_transform = target_transform
         self.train = train  # training set or test set
+        np.random.seed(seed)
 
         if download:
             self.download()
@@ -74,16 +77,9 @@ class MNIST(data.Dataset):
 
         self.data, self.targets = torch.load(os.path.join(self.processed_folder, data_file))
 
-        # resize the data
+        self.target_class = target_class if target_class else list(np.arange(10))
 
-        self.size_per_class = size_per_class
-
-        if self.size_per_class:
-            self.data, self.targets = self.resize_dataset(self.data, self.targets)
-
-        self.target_class = target_class
-
-        if len(target_class) < 10 and unknown:
+        if len(self.target_class) < 10 and unknown:
             # generate unknown class with remaining class
             self.unknown = True
 
@@ -93,7 +89,7 @@ class MNIST(data.Dataset):
 
         # relabel the data
 
-        original_labels = [0,1,2,3,4,5,6,7,8,9]
+        original_labels = np.arange(10)
         unknown_idx = torch.zeros(self.targets.size()).byte()
 
         data_size = []
@@ -102,11 +98,12 @@ class MNIST(data.Dataset):
         new_targets = None
 
         for label in original_labels:
-            if label in target_class:
-                idx = self.targets == label
+            label = int(label)
+            if label in self.target_class:
+                data_idx = self.targets == label
+                data = self.data[data_idx][:size_per_class]
 
-                data = self.data[idx]
-                labels = torch.zeros(len(data)).int() + target_class.index(label)
+                labels = torch.zeros(len(data)).int() + self.target_class.index(label)
                 data_size.append(len(data))
 
                 if new_data is None:
@@ -121,31 +118,29 @@ class MNIST(data.Dataset):
 
         if self.unknown:
             data = self.data[unknown_idx]
-            idx = np.arange(len(data))
+            data_idx = np.arange(len(data))
+            np.random.shuffle(data_idx)
 
-            np.random.seed(seed)
-            np.random.shuffle(idx)
-
-            if self.size_per_class is not None:
-                idx = idx[:self.size_per_class]
+            if size_per_class is not None:
+                data_idx = data_idx[:size_per_class]
             else:
-                size_per_class = round(len(new_data) / len(target_class))
-                idx = idx[:size_per_class]
+                size_per_class = round(len(new_data) / len(self.target_class))
+                data_idx = data_idx[:size_per_class]
 
-            data_size.append(len(idx))
-            labels = torch.zeros(len(idx)).int() + len(target_class)
+            data_size.append(len(data_idx))
+            labels = torch.zeros(len(data_idx)).int() + len(self.target_class)
 
-            new_data = torch.cat((new_data, data[idx]))
+            new_data = torch.cat((new_data, data[data_idx]))
             new_targets = torch.cat((new_targets, labels))
 
 
         print("< Dataset Summary >")
-        print("\tseed \t:", seed)
+        print("\tseed\t:", seed)
 
-        for index, label in enumerate(target_class):
+        for index, label in enumerate(self.target_class):
             print("\t", label, "\t:", index, " (", data_size[index], ")")
         if self.unknown:
-            print("\tunknown\t:", len(target_class), " (", data_size[len(target_class)], ")")
+            print("\tunknown\t:", len(self.target_class), " (", data_size[len(self.target_class)], ")")
         print("total data size : ", len(new_data))
 
         self.data = new_data
@@ -201,27 +196,6 @@ class MNIST(data.Dataset):
         if remove_finished:
             os.unlink(gzip_path)
 
-    # TODO : this function may not be necessary
-    def resize_dataset(self, data, targets):
-        counter = [0]*10
-        new_data = []
-        new_targets = []
-
-        remaining = 10 * self.size_per_class
-
-        for image, label in zip(data, targets):
-            if counter[label] < self.size_per_class:
-                new_data.append(image)
-                new_targets.append(label)
-
-                counter[label] += 1
-                remaining -=1
-
-            if remaining == 0:
-                break
-
-        return torch.stack(new_data), torch.stack(new_targets)
-
     def download(self):
         """Download the MNIST data if it doesn't exist in processed_folder already."""
 
@@ -239,7 +213,7 @@ class MNIST(data.Dataset):
             self.extract_gzip(gzip_path=file_path, remove_finished=True)
 
         # process and save as torch files
-        print('Processing...')
+        print('Downloaded MNIST dataset')
 
         training_set = (
             read_image_file(os.path.join(self.raw_folder, 'train-images-idx3-ubyte')),

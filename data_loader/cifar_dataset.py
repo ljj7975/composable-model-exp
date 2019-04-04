@@ -4,6 +4,7 @@ import os
 import os.path
 import numpy as np
 import sys
+import torch
 if sys.version_info[0] == 2:
     import cPickle as pickle
 else:
@@ -49,13 +50,14 @@ class CIFAR10(data.Dataset):
         'md5': '5ff9c542aee3614f3951f8cda6e48888',
     }
 
-    def __init__(self, root, train=True,
-                 transform=None, target_transform=None,
-                 download=False):
+    def __init__(self, root, target_class=None, size_per_class=None, train=True,
+                 transform=None, target_transform=None, download=False,
+                 unknown=False, seed=0):
         self.root = os.path.expanduser(root)
         self.transform = transform
         self.target_transform = target_transform
         self.train = train  # training set or test set
+        np.random.seed(seed)
 
         if download:
             self.download()
@@ -89,7 +91,88 @@ class CIFAR10(data.Dataset):
         self.data = np.vstack(self.data).reshape(-1, 3, 32, 32)
         self.data = self.data.transpose((0, 2, 3, 1))  # convert to HWC
 
+        self.targets = torch.Tensor(self.targets)
+
         self._load_meta()
+
+        self.target_class = target_class
+        self.unknown = False
+
+        if '100' in self.__class__.__name__:
+            # CIFAR100
+            if not self.target_class:
+                self.target_class = list(np.arange(100))
+
+            if len(self.target_class) < 100 and unknown:
+                self.unknown = True
+
+        else:
+            # CIFAR10
+            if not self.target_class:
+                self.target_class = list(np.arange(10))
+
+            if len(self.target_class) < 10 and unknown:
+                self.unknown = True
+
+        data_size = []
+        unknown_idx = torch.zeros(len(self.targets)).byte()
+
+        new_data = None
+        new_targets = None
+
+        for c in self.classes:
+            class_index = int(self.class_to_idx[c])
+            if class_index in self.target_class:
+                data_idx = self.targets == class_index
+                data = self.data[data_idx][:size_per_class]
+
+                labels = torch.zeros(len(data)).int() + self.target_class.index(class_index)
+                data_size.append(len(data))
+
+                if new_data is None:
+                    new_data = data
+                    new_targets = labels
+                else:
+                    new_data = np.concatenate((new_data, data))
+                    new_targets = np.concatenate((new_targets, labels))
+
+            else:
+                unknown_idx |= (self.targets == class_index)
+
+        self.classes = [self.classes[e] for e in self.target_class]
+
+        if self.unknown:
+            self.classes.append("unknown")
+            data = self.data[unknown_idx]
+            data_idx = np.arange(len(data))
+
+            np.random.shuffle(data_idx)
+
+            if size_per_class is not None:
+                data_idx = data_idx[:size_per_class]
+            else:
+                size_per_class = round(len(new_data) / len(self.target_class))
+                data_idx = data_idx[:size_per_class]
+
+            data_size.append(len(data_idx))
+            labels = torch.zeros(len(data_idx)).int() + len(self.target_class)
+
+            new_data = np.concatenate((new_data, data[data_idx]))
+            new_targets = np.concatenate((new_targets, labels))
+
+        self.class_to_idx = {_class: i for i, _class in enumerate(self.classes)}
+
+        print("< Dataset Summary >")
+        print("\tseed\t:", seed)
+
+        for index, label in enumerate(self.target_class):
+            print("\t", label, "-", self.classes[index], "\t:", index, " (", data_size[index], ")")
+        if self.unknown:
+            print("\tunknown\t:", len(self.target_class), " (", data_size[len(self.target_class)], ")")
+        print("total data size : ", len(new_data))
+
+        self.data = new_data
+        self.targets = new_targets
 
     def _load_meta(self):
         path = os.path.join(self.root, self.base_folder, self.meta['filename'])
@@ -144,7 +227,9 @@ class CIFAR10(data.Dataset):
             print('Files already downloaded and verified')
             return
 
+        makedir_exist_ok(self.root)
         download_url(self.url, self.root, self.filename, self.tgz_md5)
+        print('Downloaded CIFAR dataset')
 
         # extract file
         with tarfile.open(os.path.join(self.root, self.filename), "r:gz") as tar:

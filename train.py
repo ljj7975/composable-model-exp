@@ -57,7 +57,6 @@ def fine_tune_model(config, base_model):
     cp.print_progress('Fine tune model with', target_class)
 
     config['data_loader']['args']['target_class'] = target_class
-    config['data_loader']['args']['unknown'] = True
 
     train_logger = Logger()
 
