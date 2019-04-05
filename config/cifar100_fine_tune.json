@@ -7,7 +7,7 @@
         "type": "DenseNet",
         "args": {
             "num_classes": 100,
-            "depth": 40,
+            "depth": 60,
             "growth_rate": 12,
             "reduction": 1.0,
             "bottleneck": false
@@ -51,7 +51,7 @@
         "verbosity": 2,
 
         "monitor": "min val_loss",
-        "early_stop": 10,
+        "early_stop": 30,
 
         "tensorboardX": true,
         "log_dir": "saved/runs"
