@@ -123,10 +123,10 @@ class CIFAR10(data.Dataset):
         for c in self.classes:
             class_index = int(self.class_to_idx[c])
             if class_index in self.target_class:
-                data_idx = self.targets == class_index
-                data = self.data[data_idx][:size_per_class]
+                data_idx = (self.targets == class_index).nonzero()
+                data = np.squeeze(self.data[data_idx, :][:size_per_class])
 
-                labels = torch.zeros(len(data)).int() + self.target_class.index(class_index)
+                labels = np.zeros(len(data)) + self.target_class.index(class_index)
                 data_size.append(len(data))
 
                 if new_data is None:
@@ -143,7 +143,7 @@ class CIFAR10(data.Dataset):
 
         if self.unknown:
             self.classes.append("unknown")
-            data = self.data[unknown_idx]
+            data = np.squeeze(self.data[unknown_idx.nonzero()])
             data_idx = np.arange(len(data))
 
             np.random.shuffle(data_idx)
@@ -155,7 +155,7 @@ class CIFAR10(data.Dataset):
                 data_idx = data_idx[:size_per_class]
 
             data_size.append(len(data_idx))
-            labels = torch.zeros(len(data_idx)).int() + len(self.target_class)
+            labels = np.zeros(len(data_idx)) + len(self.target_class)
 
             new_data = np.concatenate((new_data, data[data_idx]))
             new_targets = np.concatenate((new_targets, labels))
@@ -172,7 +172,7 @@ class CIFAR10(data.Dataset):
         print("total data size : ", len(new_data))
 
         self.data = new_data
-        self.targets = new_targets.long()
+        self.targets = new_targets.astype(np.int_)
 
     def _load_meta(self):
         path = os.path.join(self.root, self.base_folder, self.meta['filename'])

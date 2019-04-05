@@ -20,7 +20,7 @@ class FineTuner(BaseTrainer):
         self.data_loader = data_loader
         self.valid_data_loader = valid_data_loader
         self.do_validation = self.valid_data_loader is not None
-        self.log_step = int(len(data_loader)/10)
+        self.log_step = 1 if len(data_loader) < 10 else int(len(data_loader)/10)
 
         self.logger.info("Loading checkpoint: {} ...".format(base_model))
         checkpoint = torch.load(base_model)
