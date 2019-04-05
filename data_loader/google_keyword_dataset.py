@@ -35,16 +35,13 @@ class GoogleKeywordDataset(Dataset):
 
         else:
             self.target_class = self.valid_keywords
-        self.unknown = unknown
 
         if len(self.target_class) == len(self.valid_keywords):
-            self.unknown = False    
-
-        if not self.target_class:
-            self.target_class = list(np.arange(100))
-
-        if len(self.target_class) < len(self.valid_keywords) and unknown:
+            self.unknown = False
+        elif len(self.target_class) < len(self.valid_keywords) and unknown:
             self.unknown = True
+        else:
+            self.unknown = unknown
 
         self.class_to_idx = {}
         self.classes = []
