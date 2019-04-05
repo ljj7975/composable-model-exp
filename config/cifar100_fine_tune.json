@@ -6,6 +6,7 @@
     "model": {
         "type": "DenseNet",
         "args": {
+            "num_classes": 100,
             "depth": 40,
             "growth_rate": 12,
             "reduction": 1.0,

@@ -134,7 +134,7 @@ class DenseNet(BaseModel):
 
         if not fc_id:
             # new layers
-            self.fc = nn.Linear(self.inplanes, num_classes)
+            self.fc = nn.Linear(self.in_planes, num_classes)
             fc_id = self.__set_fc_id__()
         else:
             self.__load_fcs__(fc_id)
