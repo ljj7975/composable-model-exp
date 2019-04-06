@@ -47,17 +47,8 @@ class GoogleKeywordDataset(Dataset):
         self.classes = []
 
         self.silence = silence
-        if self.silence:
-            self.class_to_idx[self.silence_keyword] = 0
-            self.classes.append(self.silence_keyword)
-        
-        if self.unknown:
-            self.class_to_idx[self.unknown_keyword] = len(self.classes)
-            self.classes.append(self.unknown_keyword)
-            
-        class_index_offset = len(self.classes)
         for index, keyword in enumerate(self.target_class):
-            self.class_to_idx[keyword] = index + class_index_offset
+            self.class_to_idx[keyword] = index
             self.classes.append(keyword)
 
         unknowns = []
@@ -98,23 +89,29 @@ class GoogleKeywordDataset(Dataset):
 
         avg_counts_per_keywords = int(len(self.keyword_audios) / len(self.target_class))
 
-        if self.silence:
-            silences = [self.silence_keyword] * avg_counts_per_keywords
-            silence_index = self.class_to_idx[self.silence_keyword]
-            labels = np.zeros(avg_counts_per_keywords) + silence_index
-
-            data_size[silence_index] = len(avg_counts_per_keywords)
-            self.keyword_audios += silences
-            self.targets = np.concatenate((self.targets, labels))
-
         if self.unknown:
+            self.class_to_idx[self.unknown_keyword] = len(self.classes)
+            self.classes.append(self.unknown_keyword)
+
             np.random.shuffle(unknowns)
             unknowns = unknowns[:avg_counts_per_keywords]
             unknown_index = self.class_to_idx[self.unknown_keyword]
             labels = np.zeros(len(unknowns)) + unknown_index
 
-            data_size[unknown_index] = len(unknowns)
+            data_size.append(len(unknowns))
             self.keyword_audios += unknowns
+            self.targets = np.concatenate((self.targets, labels))
+
+        if self.silence:
+            self.class_to_idx[self.silence_keyword] = len(self.classes)
+            self.classes.append(self.silence_keyword)
+
+            silences = [self.silence_keyword] * avg_counts_per_keywords
+            silence_index = self.class_to_idx[self.silence_keyword]
+            labels = np.zeros(avg_counts_per_keywords) + silence_index
+
+            data_size.append(len(avg_counts_per_keywords))
+            self.keyword_audios += silences
             self.targets = np.concatenate((self.targets, labels))
 
         print("< Dataset Summary >")

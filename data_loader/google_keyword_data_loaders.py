@@ -33,7 +33,7 @@ class GoogleKeywordDataLoader(BaseDataLoader):
     """
     loading Google Keyword data using BaseDataLoader
     """
-    def __init__(self, data_dir, batch_size, shuffle, validation_split, num_workers, size_per_class=None, training=True, target_class=None, unknown=True, seed=0):
+    def __init__(self, data_dir, batch_size, shuffle, validation_split, num_workers, size_per_class=None, training=True, target_class=None, unknown=True, silence=False, seed=0):
 
         self.audioProcessor = AudioPreprocessor()
 
@@ -48,6 +48,7 @@ class GoogleKeywordDataLoader(BaseDataLoader):
                     size_per_class=size_per_class,
                     transform=self.audioProcessor.compute_mfccs,
                     unknown=unknown,
+                    silence=silence,
                     seed=seed)
 
         super(GoogleKeywordDataLoader, self).__init__(
