@@ -245,6 +245,8 @@ def main(exp_type, train_flag, saved_model_dir, num_model, num_iter):
         train_models(exp_type, num_model, saved_model_dir)
 
     results = evaluate_models(exp_type, saved_model_dir, num_iter)
+    results['num_class'] = base_config['n_class']
+    results['target_class'] = TARGET_CLASS
 
     cp.print_warning("< EXP RESULTS >")
     for loss in EXP_LOSS:
@@ -253,7 +255,8 @@ def main(exp_type, train_flag, saved_model_dir, num_model, num_iter):
 
     summary_file = os.path.join(saved_model_dir, 'summary.txt')
     with open(summary_file, 'w') as file:
-        pprint.pprint(results, stream=file)
+        results_json = json.dumps(results)
+        file.write(results_json)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train and evaluate composing algorithm')
