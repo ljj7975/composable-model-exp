@@ -80,7 +80,7 @@ class GoogleKeywordDataset(Dataset):
                     if is_audio_file(wav_name):
                         self.background_noises.append(librosa.core.load(wav_name, sr=self.sample_rate)[0])
             elif label == self.unknown_keyword:
-                unknowns = [os.path.join(path_name, file_name) for file_name in os.listdir(path_name)]
+                unknowns += [os.path.join(path_name, file_name) for file_name in os.listdir(path_name)]
             else:
                 class_index = self.class_to_idx[label]
                 audios = [os.path.join(path_name, file_name) for file_name in os.listdir(path_name)]
