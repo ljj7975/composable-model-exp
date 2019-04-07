@@ -40,17 +40,20 @@
 \usepackage{amsmath}
 \usepackage{booktabs}
 \usepackage{multirow}
+\usepackage{titlesec}
+
 \newcommand{\red}[1]{\textcolor{red}{#1}}
+
 
 
 \title{Dynamic Model Construction for Efficient Classification}
 
 \author{
-	Jaejun Lee \\
-	School of Computer Science\\
-	University of Waterloo\\
-	Waterloo, ON, N2L 3G1 \\
-	\texttt{j474lee@uwaterloo.ca} \\
+    Jaejun Lee \\
+    School of Computer Science\\
+    University of Waterloo\\
+    Waterloo, ON, N2L 3G1 \\
+    \texttt{j474lee@uwaterloo.ca} \\
 }
 
 \begin{document}
@@ -85,24 +88,6 @@ Transfer learning is inspired by the same assumption as in multi-task learning; 
 
 \section{Dynamic Model Construction with Class-level Transfer Learning}
 
-% \begin{figure*}[t]
-%     \centering
-%     \begin{subfigure}[b]{.3\linewidth}
-%         \centering
-%         \includegraphics[scale=0.48,trim={0mm 1.6mm 0mm 0mm},clip]{learning_rate.png}
-%     \end{subfigure}%
-%     \begin{subfigure}[b]{.3\linewidth}
-%         \centering
-%         \includegraphics[scale=0.48,trim={0mm 1.6mm 0mm 0mm},clip]{epoch.png}
-%     \end{subfigure}
-%     \begin{subfigure}[b]{.3\linewidth}
-%         \centering
-%         \includegraphics[scale=0.48,trim={0mm 1.6mm 0mm 0mm},clip]{epoch.png}
-%     \end{subfigure}
-%     \caption{Change in accuracy while varying the number of epochs and learning rate, along with 95\% confidence interval (shaded).}
-%     \label{figure:change}
-% \end{figure*}
-
 \subsection{Approach}
 
 In this section, I introduce how to achieve dynamic model construction which adopts to the change in target class set.
@@ -114,14 +99,14 @@ Next consider a case of transfer learning. Pre-training a model and fine-tuning 
 Exploiting these characteristics in two distinct domains, the proposed algorithm can be summarized as following:
 
 \begin{enumerate}
-	\item pre-train a model as if it is targeting multi-classification problem
-	\item freeze the model parameters
-	\item fine-tune a model to obtain class-specific weights (step 4 $\sim$ 7)
-	\item construct a dataset which labels corresponding class as positive and the others as negative.
-	\item replace the last full-connected layer with two classes
-	\item fine-tune the last layer with the constructed data
-	\item store weights for positive class
-	\item at the time of the inference, the last fully-connected layer is dynamically constructed to classify the given set of class by loading corresponding weights obtained from fine-tuning
+    \item pre-train a model as if it is targeting multi-classification problem
+    \item freeze the model parameters
+    \item fine-tune a model to obtain class-specific weights (step 4 $\sim$ 7)
+    \item construct a dataset which labels corresponding class as positive and the others as negative.
+    \item replace the last full-connected layer with two classes
+    \item fine-tune the last layer with the constructed data
+    \item store weights for positive class
+    \item at the time of the inference, the last fully-connected layer is dynamically constructed to classify the given set of class by loading corresponding weights obtained from fine-tuning
 \end{enumerate}
 
 For simplicity, I will call this algorithm as composing algorithm, the model trained for multi-class as base model, models constructed from step 4 $\sim$ 7 as fine-tuned models and the model constructed from the last step as composed model.
@@ -131,9 +116,9 @@ For simplicity, I will call this algorithm as composing algorithm, the model tra
 Recall that the desired composed model should satisfy the following conditions:
 
 \begin{enumerate}
-	\item \red{preserve accuracy}
-	\item Dynamic addition and removal of a class must be possible
-	\item Minimal computation is desired for an inference
+    \item \red{preserve accuracy}
+    \item Dynamic addition and removal of a class must be possible
+    \item Minimal computation is desired for an inference
 \end{enumerate}
 
 Addition and removal of a class is possible with the composing algorithm as it can be achieved simply by adding or removing corresponding fully-connected connections.
@@ -179,54 +164,89 @@ It is found that multi-label classification has raised the same issue with CE lo
 
 \section{Experiments}
 
-In this experiment, I report how accuracy of composed model changes with respect to different loss function. The goal of this experiment is to prove the limitation of CE loss empirically and demonstrates the feasibility of composing algorithm.
+Realising the theoritical limitation of cross entropy loss, I have conducted thorough experiments using PyTorch, reporting how different loss function affects the performance of composed model.
 
-\subsection{Experimental Setup}
+In this experiment, I evaluate three different loss functions. First loss function is CE loss. Since PyTorch NLL loss implementation expects log probability, log is applied after softmax but it is found that this does not affect the conclusion from the experiments. Next, I include sigmoid with BCE loss which successfully preserves accuracy between base and composed model. Lastly, I include BCE loss with softmax. This setting is known to be unstable because BCE loss assumes the independence among classes. In fact, I have observed the training collapse once it reaches a certain point. However, since we report accuracy from the best model, results from this setting is still valid and meaningful. This setting should demonstrate how crucial sigmoid is in the composing algorithm as it simply replace sigmoid with softmax from last setting.
 
-Using PyTorch, the experiments are conducted on MNIST, a standard benchmark for classification~\cite{lecun1998gradient} with a modified version of LeNet-5 ~\cite{lecun2015lenet}. LeNet-5 is constructed with two convolutional, one dropout and two fully connected layers. The original implementation of LeNet-5 has 10 and 20 channels for the two convolutional layers and produces accuracy of 98\% on MNIST dataset. Since our goal of this experiment is to see the performance degradation, the network is modified to have 5 channels for two convolutional layers which is found to produce more descriptive results.
-
-The model is trained with 3 different loss function. First loss function is CE loss. Since PyTorch NLL loss expects log probability, log is applied after softmax but this does not affect the experiment results. Next, I include sigmoid with BCE loss as a proposed solution to preserve accuracy. Lastly, I also include BCE loss with softmax. This setting is useful to understand how crucial sigmoid is for loss function in composing algorithm. The last setting is known to be unstable because BCE loss assumes the independence among classes. In fact, I have observed the training collapse once it reaches a certain point. However, since we report accuracy from the best model, results from this setting is still valid and meaningful.
-
-% Dataset
-% epoch & optimizer
-% random seed 50 experiments taking average
-
-\subsection{Experimental results}
+Experiments are conducted with MNIST, Keyword Spotting, and CIFAR100 varying on number of classes, 10, 30, and, 100 respectively. From each experiment, I report accuracy of base model, fine-tuned model, and composed model. Furthermore, as I construct composed model by adding a class at a time, I also report accuracy for each intermediary composed model to understand how how number of classes affects the accuracy of combined model. It is found that the intermediary composed model accuracy fluctuate quite a bit depending on the order each class is added. Therefore, I repeat this process 10 times for each base model as I randomly select a class to add next.
 
 
-% table explain the original accuracy and high accuracy
+% To reduce the effects of outliers, experiments are conducted multiple times and average results are included in this report. Due to the limited time, number of iterations are different for each experiment and discussed along with other data specific experimental setting in the following section.
+
+\subsection{MNIST}
+
+MNIST is a standard benchmark for classification~\cite{lecun1998gradient} which consist of images for handwritten digits. Among the wide range of model architecture solving this problem, I have conducted my experiments with LeNet-5 ~\cite{lecun2015lenet}. LeNet-5 is constructed with two convolutional, one dropout and two fully connected layers. The original implementation of LeNet-5 has 10 and 20 channels for the two convolutional layers and produces accuracy of 98\% on MNIST dataset. Since our goal of this experiment is to understand the difference in peformance caused by different loss functions, I intentionally limited the expressive power of the network by constructing the network with only 5 channels for both convolutional layers.
+
+Both base model training and fine-tuning is conducted using Adam optimizer with learning rate of 0.0001. It is found that 5 epochs are enough for each training to be converged and LeNet-5 achieves average accuracy of 95\% with the base model and 98\% with the fine-tuned model (see Figure \ref{table:mnist_base} and \ref{table:mnist_fine_tuned}). In fact, all three loss functions present similar accuracy confirming that the comparison on the composed model is fair.
+
+Figure \ref{table:mnist_base} summarizes how the accuracy changes as number of classes increases for composed model. No matter which loss function is used for composing algorithm, decrease in accuracy is found as more classes are involved for the composed model construction. However, models with softmax based loss is found to suffer at a greater rate than models with sigmoid based loss. With CE loss, the composed model for all 10 classes has an accuracy of 85.86\% introducing about 10\% decrease compared to the base model. BCE loss with softmax is found to be the least effective for composing algorithm as it leads to final accuracy of 78.50\%. On the other hand, BCE loss with sigmoid introduces the minimal degradation and achieves the finall accuracy of 95.29\%. This proves that class independence training is crucial with the composing algorithm.
+
+\begin{table}[t]
+    \mbox{}\hfill
+    \begin{minipage}[c]{0.49\textwidth}
+        \centering{\ttfamily
+            \begin{tabular}{cc}
+                \toprule[1pt]
+                \bf{Loss function} &
+                \bf{Base model} \\
+                \midrule
+                LogSoftmax + NLL & 95.82 \\
+                Softmax + BCE & 94.86 \\
+                Sigmoid + BCE & 95.48 \\
+                \bottomrule[1pt]
+            \end{tabular}
+    }
+    \end{minipage}
+    \hfill
+    \begin{minipage}[c]{0.49\textwidth}
+        \centering
+        \includegraphics[scale=0.4,trim={0mm 0mm 0mm 0mm},clip]{mnist.png}
+    \end{minipage}
+    \hfill
+    \mbox{}
+
+    \caption{Accuracy of base model(left) and composed model with respect to number of classes(right)}
+    \label{table:mnist_base}
+\end{table}
 
 \begin{table*}[t]
     \centering
     \small
     \scalebox{0.9}{
-	    \begin{tabular}{ccccccccccccc}
-	        \toprule[1pt]
-	        \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Loss function}} &
-	        \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Base model}} &
-        	\multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Combined model}} &
-        	\multicolumn{10}{c}{\bf Fine tuned model } \\
-        	\cmidrule(lr){4-13}
-			& & & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 \\
-	        \midrule
-			LogSoftmax + NLL & 95.82 & 85.86 & 99.04 & 99.23 & 97.79 & 98.18 & 98.09 & 98.03 & 98.64 & 97.74 & 97.12 & 96.34 \\
-			Softmax + BCE & 94.86 & 78.50 & 98.81 & 99.09 & 97.23 & 97.60 & 97.45 & 97.04 & 98.34 & 97.32 & 96.46 & 95.44 \\
-			Sigmoid + BCE & 95.48 & 95.29 & 99.03 & 99.19 & 97.68 & 98.21 & 98.31 & 98.09 & 98.54 & 97.57 & 97.18 & 96.66 \\
-	        \bottomrule[1pt]
-	    \end{tabular}
+        \begin{tabular}{ccccccccccc}
+            \toprule[1pt]
+            \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Loss function}} &
+            \multicolumn{10}{c}{\bf Fine tuned model } \\
+            \cmidrule(lr){2-11}
+            & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 \\
+            \midrule
+            LogSoftmax + NLL & 99.04 & 99.23 & 97.79 & 98.18 & 98.09 & 98.03 & 98.64 & 97.74 & 97.12 & 96.34 \\
+            Softmax + BCE & 98.81 & 99.09 & 97.23 & 97.60 & 97.45 & 97.04 & 98.34 & 97.32 & 96.46 & 95.44 \\
+            Sigmoid + BCE & 99.03 & 99.19 & 97.68 & 98.21 & 98.31 & 98.09 & 98.54 & 97.57 & 97.18 & 96.66 \\
+            \bottomrule[1pt]
+        \end{tabular}
     }
-    \caption{Accuracy with different loss function}
-    \label{table:accuracy}
+    \caption{Accuracy of fine-tuned model per each class}
+    \label{table:mnist_fine_tuned}
 \end{table*}
-% explain how 10 at random
 
-% graphs,
 
+
+\subsection{Keyword Spotting}
+
+\subsubsection{Experimental Setup}
+
+\subsubsection{Experimental results}
+
+
+
+\subsection{CIFAR100}
 
 densenet ~\cite{huang2017densely}
+\subsubsection{Experimental Setup}
 
+\subsubsection{Experimental results}
 
-\section{Case study}
 
 
 \section{Conclusion}

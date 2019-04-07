@@ -12,7 +12,7 @@ num_model = results['num_model']
 
 print("num_model", num_model)
 
-fig, ax = plt.subplots()
+fig = plt.figure(figsize=(7,4))
 
 legends = []
 
@@ -21,20 +21,21 @@ for loss in EXP_LOSS:
 
     values = value['combined_model']['average_accuracy']
     num_class = results.get('num_class', len(values))
-    legend = ax.plot(np.arange(num_class) + 1, values)
+    legend = plt.plot(np.arange(num_class) + 1, values)
     legends.append(legend)
 
+font_size = 13
+plt.xlabel('number of classes', fontsize=font_size)
+plt.ylabel('accuracy (%)', fontsize=font_size)
 
-ax.set(xlabel='number of classes', ylabel='accuracy (%)', title='Change in accuracy w.r.t change in number of classes')
-ax.set_ylim(75, 100)
+plt.ylim(75, 100)
 
 fig.legend(legends,     # The line objects
            labels=EXP_LOSS,
            loc=8,  # Position of legend
            ncol=3
            )
-
-ax.grid()
-fig.subplots_adjust(bottom=0.18, top=0.9)
+plt.grid()
+fig.subplots_adjust(bottom=0.22, top=0.95)
 fig.savefig("mnist.png")
 plt.show()
