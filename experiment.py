@@ -24,6 +24,11 @@ def train_models(exp_type, num_model, saved_model_dir):
     fine_tune_config = json.load(open('config/{}_fine_tune.json'.format(exp_type)))
 
     fine_tune_config['trainer']['epochs'] = fine_tune_config['trainer']['epochs'] + base_config['trainer']['epochs']
+    if "media" not in base_config['data_loader']['args']['data_dir']:
+        base_config['data_loader']['args']['data_dir'] = "/media/brandon/SSD" + base_config['data_loader']['args']['data_dir']
+
+    if "media" not in fine_tune_config['data_loader']['args']['data_dir']:
+        fine_tune_config['data_loader']['args']['data_dir'] = "/media/brandon/SSD" + fine_tune_config['data_loader']['args']['data_dir']
 
     for i in tqdm(range(num_model)):
         seed = random.randint(0, 200)
@@ -43,7 +48,6 @@ def train_models(exp_type, num_model, saved_model_dir):
 
             base_config['loss'] = loss
             fine_tune_config['loss'] = loss
-
             if next_index > 0:
                 prev_index = next_index - 1
                 prev_model_dir = os.path.join(saved_model_dir, loss, str(prev_index))
@@ -58,7 +62,6 @@ def train_models(exp_type, num_model, saved_model_dir):
                 base_model = os.path.join(copy_dest_dir, best_base_model, 'model_best.pth')
 
                 cp.print_warning("loaded base model", base_model)
-
             else:
                 base_model = train.train_base_model(base_config)
 
@@ -87,6 +90,9 @@ def evaluate_base_model(exp_type, saved_model_dir):
                 config = torch.load(base_model, map_location='cpu')['config']
             else:
                 config = torch.load(base_model)['config']
+            
+            if "media" not in config['data_loader']['args']['data_dir']:
+                config['data_loader']['args']['data_dir'] = "/media/brandon/SSD" + config['data_loader']['args']['data_dir']
 
             config['metrics'] = ["pred_acc"]
             model, data_loader, loss_fn, metrics = evaluate.load_model(config, base_model, TARGET_CLASS)
@@ -128,6 +134,9 @@ def evaluate_fine_tuned_model(exp_type, saved_model_dir):
 
                 target_class = [int(c)]
                 config['model']['args']['num_classes'] = len(target_class) + 1
+                
+                if "media" not in config['data_loader']['args']['data_dir']:
+                    config['data_loader']['args']['data_dir'] = "/media/brandon/SSD" + config['data_loader']['args']['data_dir']
 
                 model, data_loader, loss_fn, metrics = evaluate.load_model(config, fine_tuned_model, target_class)
 
@@ -169,6 +178,9 @@ def evaluate_combined_model(exp_type, saved_model_dir, num_iter):
             else:
                 config = torch.load(base_model)['config']
 
+            if "media" not in config['data_loader']['args']['data_dir']:
+                config['data_loader']['args']['data_dir'] = "/media/brandon/SSD" + config['data_loader']['args']['data_dir']
+
             config['metrics'] = ["pred_acc"]
             ordered_class = TARGET_CLASS.copy()
 
@@ -203,14 +215,17 @@ def evaluate_combined_model(exp_type, saved_model_dir, num_iter):
 
 
 def evaluate_models(exp_type, saved_model_dir, num_iter):
+    cp.print_progress("< evaluate base model >")
     num_base_model, base_model_acc = evaluate_base_model(exp_type, saved_model_dir)
     cp.print_progress("< base model acc >")
     cp.print_progress(json.dumps(base_model_acc, indent=4, separators=(': ')))
 
+    cp.print_progress("< evaluate fine tuned model >")
     num_fine_tuned_model, fine_tuned_model_acc = evaluate_fine_tuned_model(exp_type, saved_model_dir)
     cp.print_progress("< fine tuned model acc >")
     cp.print_progress(json.dumps(fine_tuned_model_acc, indent=4, separators=(': ')))
 
+    cp.print_progress("< evaluate combined model >")
     num_combined_model, combined_model_acc = evaluate_combined_model(exp_type, saved_model_dir, num_iter)
     cp.print_progress("< combined model acc >")
     cp.print_progress(json.dumps(combined_model_acc, indent=4, separators=(': ')))
@@ -245,6 +260,8 @@ def main(exp_type, train_flag, saved_model_dir, num_model, num_iter):
         train_models(exp_type, num_model, saved_model_dir)
 
     results = evaluate_models(exp_type, saved_model_dir, num_iter)
+    results['num_class'] = base_config['n_class']
+    results['target_class'] = TARGET_CLASS
 
     cp.print_warning("< EXP RESULTS >")
     for loss in EXP_LOSS:
@@ -253,7 +270,8 @@ def main(exp_type, train_flag, saved_model_dir, num_model, num_iter):
 
     summary_file = os.path.join(saved_model_dir, 'summary.txt')
     with open(summary_file, 'w') as file:
-        pprint.pprint(results, stream=file)
+        results_json = json.dumps(results)
+        file.write(results_json)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train and evaluate composing algorithm')

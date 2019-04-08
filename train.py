@@ -3,6 +3,7 @@ import json
 import argparse
 import torch
 
+import numpy as np
 import data_loader as data_loaders
 import model as models
 import trainer.loss as loss_functions
@@ -94,10 +95,13 @@ def main(base_config, fine_tune_config, base_model, target_class, seed):
     if not base_model:
         base_model = train_base_model(base_config)
 
+    if target_class is None:
+        target_class = np.arange(base_config['n_class']).tolist()
+
+    cp.print_warning("target class for fine-tuning :", target_class)
+
     fine_tune_config['trainer']['epochs'] = fine_tune_config['trainer']['epochs'] + base_config['trainer']['epochs']
-
     fine_tune_config['loss'] = base_config['loss']
-
     fine_tune_config['data_loader']['args']['seed'] = seed
 
     for target in target_class:
@@ -116,8 +120,8 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--device', default=None, type=str,
                         help='indices of GPUs to enable (default: all)')
     parser.add_argument('-t', '--target_class', nargs='+', type=int,
-                        help="target class to fine tune (default: all 10 classes)",
-                        default=[0,1,2,3,4,5,6,7,8,9])
+                        help="target class to fine tune (default: all classes)",
+                        default=None)
     parser.add_argument('-s', '--seed', default=0, type=int, help="random seed")
     args = parser.parse_args()
 
