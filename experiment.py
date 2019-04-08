@@ -22,11 +22,11 @@ def train_models(num_model, saved_model_dir):
     fine_tune_config = json.load(open('config/{}_fine_tune.json'.format(EXP_TYPE)))
 
     fine_tune_config['trainer']['epochs'] = fine_tune_config['trainer']['epochs'] + base_config['trainer']['epochs']
-    if "media" not in base_config['data_loader']['args']['data_dir']:
-        base_config['data_loader']['args']['data_dir'] = "/media/brandon/SSD" + base_config['data_loader']['args']['data_dir']
+    # if "media" not in base_config['data_loader']['args']['data_dir']:
+    #     base_config['data_loader']['args']['data_dir'] = "/media/brandon/SSD" + base_config['data_loader']['args']['data_dir']
 
-    if "media" not in fine_tune_config['data_loader']['args']['data_dir']:
-        fine_tune_config['data_loader']['args']['data_dir'] = "/media/brandon/SSD" + fine_tune_config['data_loader']['args']['data_dir']
+    # if "media" not in fine_tune_config['data_loader']['args']['data_dir']:
+    #     fine_tune_config['data_loader']['args']['data_dir'] = "/media/brandon/SSD" + fine_tune_config['data_loader']['args']['data_dir']
 
     for i in tqdm(range(num_model)):
         seed = random.randint(0, 200)
@@ -95,8 +95,8 @@ def evaluate_base_model(saved_model_dir):
             else:
                 config = torch.load(base_model)['config']
             
-            if "media" not in config['data_loader']['args']['data_dir']:
-                config['data_loader']['args']['data_dir'] = "/media/brandon/SSD" + config['data_loader']['args']['data_dir']
+            # if "media" not in config['data_loader']['args']['data_dir']:
+            #     config['data_loader']['args']['data_dir'] = "/media/brandon/SSD" + config['data_loader']['args']['data_dir']
 
             config['metrics'] = ["pred_acc"]
             model, data_loader, loss_fn, metrics = evaluate.load_model(config, base_model, TARGET_CLASS)
@@ -139,8 +139,8 @@ def evaluate_fine_tuned_model(saved_model_dir):
                 target_class = [int(c)]
                 config['model']['args']['num_classes'] = len(target_class) + 1
                 
-                if "media" not in config['data_loader']['args']['data_dir']:
-                    config['data_loader']['args']['data_dir'] = "/media/brandon/SSD" + config['data_loader']['args']['data_dir']
+                # if "media" not in config['data_loader']['args']['data_dir']:
+                #     config['data_loader']['args']['data_dir'] = "/media/brandon/SSD" + config['data_loader']['args']['data_dir']
 
                 model, data_loader, loss_fn, metrics = evaluate.load_model(config, fine_tuned_model, target_class)
 
@@ -182,8 +182,8 @@ def evaluate_combined_model(saved_model_dir, num_iter, step_size):
             else:
                 config = torch.load(base_model)['config']
 
-            if "media" not in config['data_loader']['args']['data_dir']:
-                config['data_loader']['args']['data_dir'] = "/media/brandon/SSD" + config['data_loader']['args']['data_dir']
+            # if "media" not in config['data_loader']['args']['data_dir']:
+            #     config['data_loader']['args']['data_dir'] = "/media/brandon/SSD" + config['data_loader']['args']['data_dir']
 
             config['metrics'] = ["pred_acc"]
             ordered_class = TARGET_CLASS.copy()
