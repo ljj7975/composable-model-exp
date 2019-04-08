@@ -96,6 +96,8 @@ def main(base_config, fine_tune_config, base_model, target_class, seed):
 
     fine_tune_config['trainer']['epochs'] = fine_tune_config['trainer']['epochs'] + base_config['trainer']['epochs']
 
+    fine_tune_config['loss'] = base_config['loss']
+
     fine_tune_config['data_loader']['args']['seed'] = seed
 
     for target in target_class:

@@ -7,7 +7,7 @@
         "type": "DenseNet",
         "args": {
             "num_classes": 100,
-            "depth": 60,
+            "depth": 100,
             "growth_rate": 12,
             "reduction": 1.0,
             "bottleneck": false
@@ -17,7 +17,7 @@
         "type": "Cifar100DataLoader",
         "args":{
             "data_dir": "/media/brandon/SSD/data/cifar100",
-            "batch_size": 128,
+            "batch_size": 64,
             "shuffle": true,
             "validation_split": 0.1,
             "num_workers": 2,
@@ -51,7 +51,7 @@
         "verbosity": 2,
 
         "monitor": "min val_loss",
-        "early_stop": 30,
+        "early_stop": 100,
 
         "tensorboardX": true,
         "log_dir": "saved/runs"
