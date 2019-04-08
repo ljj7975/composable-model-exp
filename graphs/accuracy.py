@@ -3,7 +3,8 @@ import pprint
 from matplotlib import pyplot as plt
 import numpy as np
 
-summary_file = "summary.txt"
+task = "kws"
+summary_file = task+".txt"
 
 results = eval(open(summary_file).read())
 
@@ -18,8 +19,23 @@ legends = []
 
 for loss in EXP_LOSS:
     value = results[loss]
+    print(loss)
+    print("   base model")
+    base_acc = value['base_model']['average_accuracy']
+    print("\t", "avg:", base_acc)
 
+    print("   fine_tuned_model")
+    ft_values = value['fine_tuned_model']['average_accuracy']
+    print("\t", "avg:", np.mean(ft_values))
+    print("\t", "min:", np.min(ft_values))
+    print("\t", "max:", np.max(ft_values))
+	
     values = value['combined_model']['average_accuracy']
+    print("   combined model")
+    print("\t", "final acc:", values[-1])
+    gap = base_acc - values[-1]
+    print("\t", "gap from base:", round(100 * gap / base_acc, 2), "%")
+
     num_class = results.get('num_class', len(values))
     legend = plt.plot(np.arange(num_class) + 1, values)
     legends.append(legend)
@@ -37,5 +53,5 @@ fig.legend(legends,     # The line objects
            )
 plt.grid()
 fig.subplots_adjust(bottom=0.22, top=0.95)
-fig.savefig("mnist.png")
+fig.savefig(task+".png")
 plt.show()
