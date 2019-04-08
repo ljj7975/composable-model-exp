@@ -239,6 +239,33 @@ Figure \ref{table:mnist_base} summarizes how the accuracy changes as number of c
 \subsubsection{Experimental results}
 
 
+\begin{table}[t]
+    \mbox{}\hfill
+    \begin{minipage}[c]{0.49\textwidth}
+        \centering{\ttfamily
+            \begin{tabular}{cc}
+                \toprule[1pt]
+                \bf{Loss function} &
+                \bf{Base model} \\
+                \midrule
+                LogSoftmax + NLL & 94.03 \\
+                Softmax + BCE & 91.84 \\
+                Sigmoid + BCE & 90.82 \\
+                \bottomrule[1pt]
+            \end{tabular}
+    }
+    \end{minipage}
+    \hfill
+    \begin{minipage}[c]{0.49\textwidth}
+        \centering
+        \includegraphics[scale=0.4,trim={0mm 0mm 0mm 0mm},clip]{res15.png}
+    \end{minipage}
+    \hfill
+    \mbox{}
+
+    \caption{Accuracy of base model(left) and composed model with respect to number of classes(right)}
+    \label{table:kws_base}
+\end{table}
 
 \subsection{CIFAR100}
 
