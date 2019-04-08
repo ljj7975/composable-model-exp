@@ -170,157 +170,72 @@ In this experiment, I evaluate three different loss functions. First loss functi
 
 Experiments are conducted with MNIST, Keyword Spotting, and CIFAR100 varying on number of classes, 10, 30, and, 100 respectively. From each experiment, I report accuracy of base model, fine-tuned model, and composed model. Furthermore, as I construct composed model by adding a class at a time, I also report accuracy for each intermediary composed model to understand how how number of classes affects the accuracy of combined model. It is found that the intermediary composed model accuracy fluctuate quite a bit depending on the order each class is added. Therefore, I repeat this process 10 times for each base model as I randomly select a class to add next.
 
-
-% To reduce the effects of outliers, experiments are conducted multiple times and average results are included in this report. Due to the limited time, number of iterations are different for each experiment and discussed along with other data specific experimental setting in the following section.
-
 \subsection{MNIST}
 
 MNIST is a standard benchmark for classification~\cite{lecun1998gradient} which consist of images for handwritten digits. Among the wide range of model architecture solving this problem, I have conducted my experiments with \texttt{LeNet-5} ~\cite{lecun2015lenet}. \texttt{LeNet-5} is constructed with two convolutional, one dropout and two fully connected layers. The original implementation of \texttt{LeNet-5} has 10 and 20 channels for the two convolutional layers and produces accuracy of 98\% on MNIST dataset. Since our goal of this experiment is to understand the difference in peformance caused by different loss functions, I intentionally limited the expressive power of the network by constructing the network with only 5 channels for both convolutional layers.
 
-Both base model training and fine-tuning is conducted using Adam optimizer with learning rate of 0.0001. After conducting 50 iterations of the experiment, it is found that 5 epochs are enough for each training to be converged and \texttt{LeNet-5} achieves average accuracy of 95\% with the base model and 98\% with the fine-tuned model (see Figure \ref{table:mnist_base} and \ref{table:mnist_fine_tuned}). In fact, all three loss functions present similar accuracy confirming that the comparison on the composed model is fair.
+Both base model training and fine-tuning is conducted using Adam optimizer with learning rate of 0.0001. After conducting 50 iterations of the experiment, it is found that all three loss function converges to similar accuracy within 5 epochs. The base models converge to average accuracy of 95\% and fine-tuned models converge to 98\% (see Figure \ref{table:mnist}).
 
-Figure \ref{table:mnist_base} summarizes how the accuracy changes as number of classes increases for composed model. No matter which loss function is used for composing algorithm, decrease in accuracy is found as more classes are involved for the composed model construction. However, models with softmax based loss is found to suffer at a greater rate than models with sigmoid based loss. With CE loss, the composed model for all 10 classes has an accuracy of 85.86\% introducing about 10\% decrease compared to the base model. BCE loss with softmax is found to be the least effective for composing algorithm as it leads to final accuracy of 78.50\%. On the other hand, BCE loss with sigmoid introduces the minimal degradation and achieves the finall accuracy of 95.29\%. This proves that class independence training is crucial with the composing algorithm.
-
-% logsoftmax_nll_loss
-%    base model
-%      avg: 95.8
-%    fine_tuned_model
-%      avg: 98.018
-%      min: 96.29
-%      max: 99.24
-%    combined model
-%      final acc: 85.74
-%      gap from base: 10.5 %
-% softmax_bce_loss
-%    base model
-%      avg: 94.71
-%    fine_tuned_model
-%      avg: 97.32600000000001
-%      min: 95.08
-%      max: 99.06
-%    combined model
-%      final acc: 77.8
-%      gap from base: 17.85 %
-% sigmoid_bce_loss
-%    base model
-%      avg: 95.49
-%    fine_tuned_model
-%      avg: 98.066
-%      min: 96.74
-%      max: 99.19
-%    combined model
-%      final acc: 95.3
-%      gap from base: 0.2 %
-
-\begin{table}[t]
-    \mbox{}\hfill
-    \begin{minipage}[c]{0.49\textwidth}
-        \centering{\ttfamily
-            \begin{tabular}{cc}
-                \toprule[1pt]
-                \bf{Loss function} &
-                \bf{Base model} \\
-                \midrule
-                LogSoftmax + NLL & 95.82 \\
-                Softmax + BCE & 94.86 \\
-                Sigmoid + BCE & 95.48 \\
-                \bottomrule[1pt]
-            \end{tabular}
-    }
-    \end{minipage}
-    \hfill
-    \begin{minipage}[c]{0.49\textwidth}
-        \centering
-        \includegraphics[scale=0.4,trim={0mm 0mm 0mm 0mm},clip]{mnist.png}
-    \end{minipage}
-    \hfill
-    \mbox{}
-
-    \caption{Accuracy of base model(left) and composed model with respect to number of classes(right)}
-    \label{table:mnist_base}
-\end{table}
-
-\begin{table*}[t]
-    \centering
-    \small
-    \scalebox{0.9}{
-        \begin{tabular}{ccccccccccc}
-            \toprule[1pt]
-            \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Loss function}} &
-            \multicolumn{10}{c}{\bf Fine tuned model } \\
-            \cmidrule(lr){2-11}
-            & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 \\
-            \midrule
-            LogSoftmax + NLL & 99.04 & 99.23 & 97.79 & 98.18 & 98.09 & 98.03 & 98.64 & 97.74 & 97.12 & 96.34 \\
-            Softmax + BCE & 98.81 & 99.09 & 97.23 & 97.60 & 97.45 & 97.04 & 98.34 & 97.32 & 96.46 & 95.44 \\
-            Sigmoid + BCE & 99.03 & 99.19 & 97.68 & 98.21 & 98.31 & 98.09 & 98.54 & 97.57 & 97.18 & 96.66 \\
-            \bottomrule[1pt]
-        \end{tabular}
-    }
-    \caption{Accuracy of fine-tuned model per each class}
-    \label{table:mnist_fine_tuned}
-\end{table*}
-
-\subsection{Keyword Spotting}
-
-In order to evaluate the universality of composing algorithm, I extend the idea to keyword spotting where the input data is audio. The goal of Keyword Spotting (KWS) is to detect an audio of pre-trained keywords, such as “Hey Siri”. Since the meaningful results introduced by~\cite{sainath2015convolutional}, Neural network has been the {\it de facto} approach for KWS. In this experiment, I implement \texttt{res15-narrow} introduced by~\cite{tang2018deep}, which achieves accuracy of 94\% for 12 keywords on Google’s Speech Commands Dataset~\cite{speechcommandsdataset}. \texttt{res15-narrow} comprises 6 residual blocks with 19 feature maps where each residual block is composed of bias-free convolution and batch normalization layer.
-
-Unlike the previous studies with Google’s Speech Commands Dataset, I try to classify all 30 keywords as I would like to understand how stable the copmosing algorithm with respect to the increasing number of classes. Following the standard feature extraction process for audio, I first construct Forty-dimensional Mel-Frequency Cepstrum Coefficient (MFCC) frames and stack them using 30ms windows with a 10ms shift.
-
-Throughout 10 experiments conducted, both base model training and fine-tuning is achieved with stochastic gradient descent with decreasing learning rate from 0.1 to 0.0001, stepping by a factor of ten. The base model is trained for 30 epochs with decrease in learning rate at 10 and 20 epochs. Unlike MNIST, the standard CE loss produces the best results; average accuracy of 93.11\%. It is found that the base model achieves average accuracy of 91.03\% and 89.63\% when trained using softmax with BCE loss and sigmoid with BCE loss respectively.
-
-In order to obtain fine-tuned weights for each class, I further train the model for 10 epochs with the decrease at 4 and 7 epochs. As summarized in table \ref{table:kws}, CE loss leads to the best fine-tuned models of 95.31\% accuracy. Similarly, softmax with BCE loss produces fine-tuned models with average accuracy of 91.84\% and sigmoid with BCE loss produces models with 91.28\%.
-
-% logsoftmax_nll_loss
-%    base model
-%      avg: 93.11
-%    fine_tuned_model
-%      avg: 95.31433333333332
-%      min: 92.89
-%      max: 97.17
-%    combined model
-%      final acc: 90.24
-%      gap from base: 3.08 %
-% softmax_bce_loss
-%    base model
-%      avg: 91.03
-%    fine_tuned_model
-%      avg: 91.97766666666665
-%      min: 89.29
-%      max: 95.28
-%    combined model
-%      final acc: 87.31
-%      gap from base: 4.09 %
-% sigmoid_bce_loss
-%    base model
-%      avg: 89.63
-%    fine_tuned_model
-%      avg: 91.28466666666667
-%      min: 89.08
-%      max: 93.97
-%    combined model
-%      final acc: 88.18
-%      gap from base: 1.62 %
-
-
-\red{Suprisingly, accuracy perservation is failed on kws}
+Table \ref{figure:composed_mnist} summarizes how the accuracy changes as number of classes increases for composed model. No matter which loss function is used for composing algorithm, decrease in accuracy is found as more classes are involved for the composed model construction. However, models with softmax based loss is found to suffer at a greater rate than models with sigmoid based loss. With CE loss, the composed model for all 10 classes has an accuracy of 85.86\% introducing 10.5\% decrease with respect to the base model. decrease from BCE loss with softmax is found to be the greatest as the accuracy decreases by 17.85\% with the final accuracy of 78.50\%. On the other hand, BCE loss with sigmoid introduces the minimal degradation of 0.2\% and achieves the final accuracy of 95.29\%. \red{This proves that class independence training is crucial with the composing algorithm.}
 
 \begin{table}[t]
     \centering
-    \begin{tabular}{ccccc}
+    \begin{tabular}{ccccccc}
         \toprule[1pt]
         \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Loss function}} &
         \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Base model}} &
-        \multicolumn{3}{c}{\bf Fine tuned model } \\
+        \multicolumn{3}{c}{\bf Fine tuned model } &
+        \multicolumn{2}{c}{\bf Composed model } \\
         \cmidrule(lr){3-5}
-        & & average & minimum & maximum \\
+        \cmidrule(lr){6-7}
+        & & average & minimum & maximum & accuracy & decrease rate \\
         \midrule
-        LogSoftmax + NLL & 93.11 & 95.31 & 92.89 & 97.17 \\
-        Softmax + BCE & 91.03 & 91.98 & 89.29 & 95.28 \\
-        Sigmoid + BCE & 89.63 & 91.28 & 89.08 & 93.97 \\
+        LogSoftmax + NLL & 95.8 & 98.02 & 96.29 & 99.24 & 85.74 & 10.50 \\
+        Softmax + BCE & 94.71 & 97.33 & 95.08 & 99.06 & 77.80 & 17.85 \\
+        Sigmoid + BCE & 95.49 & 98.07 & 96.74 & 99.19 & 95.30 & 0.20 \\
         \bottomrule[1pt]
     \end{tabular}
-    \caption{Average accuracy of \texttt{res15-narrow} base and fine-tuned model}
+    \caption{Average accuracy of base, fine-tuned, and composed model for MNIST}
+    \label{table:mnist}
+\end{table}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[scale=0.5,trim={0mm 0mm 0mm 0mm},clip]{mnist.png}
+    \caption{Accuracy of composed model for MNIST with respect to number of classes}
+    \label{figure:composed_mnist}
+\end{figure}
+
+\subsection{Keyword Spotting}
+
+In order to evaluate the universality of composing algorithm, I extend the idea to keyword spotting where the input data is audio. The goal of Keyword Spotting (KWS) is to detect an audio of pre-trained keywords, such as “Hey Siri”. Since the first menaing results introduced by~\cite{chen2014small}, Neural network has been the {\it de facto} approach for KWS. In this experiment, I implement \texttt{res15-narrow} introduced by~\cite{tang2018deep}, which achieves accuracy of 94\% for 12 keywords on Google’s Speech Commands Dataset~\cite{speechcommandsdataset}. \texttt{res15-narrow} comprises 6 residual blocks with 19 feature maps where each residual block is composed of bias-free convolutional and batch normalization layer.
+
+As opposed to the previous studies with Google’s Speech Commands Dataset where accuracy is evaluated on 12 keywords, I include all 30 keywords as I am intested in how stable the copmosing algorithm with respect to the increasing number of classes. Following the standard feature extraction process for audio, I first construct Forty-dimensional Mel-Frequency Cepstrum Coefficient (MFCC) frames and stack them using 30ms windows with a 10ms shift. Since the dataset has one-second long utterances of each word, the final proceesed input size is 101 × 40.
+
+Throughout 10 experiments conducted, stochastic gradient descent is used to train both base model and fine-tuned model with decreases in learning rate from 0.1 to 0.0001, stepping by a factor of ten. The base model is trained for 30 epochs with decrease in learning rate at 10 and 20 epochs. Unlike MNIST, the standard CE loss produces the best results; average accuracy of 93.11\%. It is found that the base model achieves average accuracy of 91.03\% and 89.63\% when trained using softmax with BCE loss and sigmoid with BCE loss respectively.
+
+In order to obtain fine-tuned weights for each class, I further fine-tune the last fully-connected layer for 10 epochs with the decrease at 4 and 7 epochs. As summarized in table \ref{table:kws}, CE loss leads to the best fine-tuned models of 95.31\% accuracy. Similarly, softmax with BCE loss produces fine-tuned models with average accuracy of 91.84\% and sigmoid with BCE loss produces models with 91.28\%.
+
+As observed in the experiment with MNIST, accuracy of composed model decreases as more classes are involved (see \ref{figure:composed_kws}. The model with CE loss shows the final accuracy of 90.24\% which is 3.08\% relative decrease from its base model accuracy. Softmax with BCE loss shows relative decrease of 4.09\% with the final accuracy of 87.31\% while the relative decrease in accuracy with sigmoid with BCE loss is only 1.62\% with the final accuracy of 88.18\%. Though composed model with CE loss demonstrates the best performance, sigmoid with BCE loss is found to be the most roboust loss function for composing algorithm with KWS.
+
+\begin{table}[t]
+    \centering
+    \begin{tabular}{ccccccc}
+        \toprule[1pt]
+        \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Loss function}} &
+        \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Base model}} &
+        \multicolumn{3}{c}{\bf Fine tuned model } &
+        \multicolumn{2}{c}{\bf Composed model } \\
+        \cmidrule(lr){3-5}
+        \cmidrule(lr){6-7}
+        & & average & minimum & maximum & accuracy & decrease rate \\
+        \midrule
+        LogSoftmax + NLL & 93.11 & 95.31 & 92.89 & 97.17 & 90.24 & 3.08 \\
+        Softmax + BCE & 91.03 & 91.98 & 89.29 & 95.28 & 87.31 & 4.09 \\
+        Sigmoid + BCE & 89.63 & 91.28 & 89.08 & 93.97 & 88.18 & 1.62 \\
+        \bottomrule[1pt]
+    \end{tabular}
+    \caption{Average accuracy of base, fine-tuned, and composed model for KWS}
     \label{table:kws}
 \end{table}
 
@@ -328,16 +243,45 @@ In order to obtain fine-tuned weights for each class, I further train the model 
 \begin{figure}[t]
     \centering
     \includegraphics[scale=0.5,trim={0mm 0mm 0mm 0mm},clip]{kws.png}
-    \caption{Accuracy of base model(left) and composed model with respect to number of classes(right)}
+    \caption{Accuracy of composed model for KWS with respect to number of classes}
     \label{figure:composed_kws}
 \end{figure}
 
 \subsection{CIFAR-100}
 
-CIFAR is a collection of tiny colour images from the web introduced by ~\cite{krizhevsky2009learning}. There exist two variations of this dataset varying on number of classes: CIFAR-10 and CIFAR-100. The experiment is constructed with CIFAR-100 which constitutes of 600 images of 100 classes.
+CIFAR is a collection of tiny colour images from the web introduced by~\cite{krizhevsky2009learning}. There exist two variations of CIFAR varying on number of classes: CIFAR-10 and CIFAR-100. The following experiment is constructed with CIFAR-100 which constitutes of 600 images of 100 classes.
+
+For this experiment, I have implemented DenseNet, a state of the art model architecture for CIFAR dataset~\cite{huang2017densely}. Building upon the architecture with residual connection, the feature-maps of all preceding layers are used as inputs for each layer. Following the standard implementation introduced by~\cite{huang2017densely}, the network has three dense blocks with transition layers between which changes the feature-map sizes by convolution and pooling. I include results from two variations of DenseNet, \texttt{dense-40} and \texttt{dense-100} which vary by number of layers.
+
+\begin{table}[t]
+    \centering
+    \begin{tabular}{ccccccc}
+        \toprule[1pt]
+        \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Loss function}} &
+        \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Base model}} &
+        \multicolumn{3}{c}{\bf Fine tuned model } &
+        \multicolumn{2}{c}{\bf Composed model } \\
+        \cmidrule(lr){3-5}
+        \cmidrule(lr){6-7}
+        & & average & minimum & maximum & accuracy & decrease rate \\
+        \midrule
+        LogSoftmax + NLL & 93.11 & 95.31 & 92.89 & 97.17 & 90.24 & 3.08 \\
+        Softmax + BCE & 91.03 & 91.98 & 89.29 & 95.28 & 87.31 & 4.09 \\
+        Sigmoid + BCE & 89.63 & 91.28 & 89.08 & 93.97 & 88.18 & 1.62 \\
+        \bottomrule[1pt]
+    \end{tabular}
+    \caption{Average accuracy of base, fine-tuned, and composed model for CIFAR-100}
+    \label{table:cifar}
+\end{table}
 
 
-densenet ~\cite{huang2017densely}
+% \begin{figure}[t]
+%     \centering
+%     \includegraphics[scale=0.5,trim={0mm 0mm 0mm 0mm},clip]{cifar.png}
+%     \caption{Accuracy of composed model for CIFAR-100 with respect to number of classes}
+%     \label{figure:composed_cifar}
+% \end{figure}
+
 
 \section{Conclusion}
 In this section please concisely describe what you are going to achieve in this project. E.g., formulate your problem precisely (mathematically), present the technical challenges (if any), discuss the tools or datasets that you will build on, state your goals, and come up with a plan for evaluation.
