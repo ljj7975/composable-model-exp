@@ -47,7 +47,7 @@
     "trainer": {
         "epochs": 100,
         "save_dir": "/home/r33tang/scratch/saved/",
-        "save_period": 100,
+        "save_period": 50,
         "verbosity": 2,
 
         "monitor": "min val_loss",
