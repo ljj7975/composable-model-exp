@@ -94,7 +94,7 @@ def evaluate_base_model(saved_model_dir):
                 config = torch.load(base_model, map_location='cpu')['config']
             else:
                 config = torch.load(base_model)['config']
-            
+
             # if "media" not in config['data_loader']['args']['data_dir']:
             #     config['data_loader']['args']['data_dir'] = "/media/brandon/SSD" + config['data_loader']['args']['data_dir']
 
@@ -138,7 +138,7 @@ def evaluate_fine_tuned_model(saved_model_dir):
 
                 target_class = [int(c)]
                 config['model']['args']['num_classes'] = len(target_class) + 1
-                
+
                 # if "media" not in config['data_loader']['args']['data_dir']:
                 #     config['data_loader']['args']['data_dir'] = "/media/brandon/SSD" + config['data_loader']['args']['data_dir']
 
@@ -294,7 +294,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train and evaluate composing algorithm')
 
     parser.add_argument('-m', '--models', type=str,
-                        default="trained",
+                        default="/home/r33tang/scratch/trained",
                         help='path to dir contnaining trained models (default: trained)')
     parser.add_argument('-t', '--train', help="train models", action='store_true')
     parser.add_argument('-nm', '--num_model', default=5, type=int,
