@@ -52,7 +52,7 @@
         "monitor": "min val_loss",
         "early_stop": 300,
 
-        "tensorboardX": true,
+        "tensorboardX": false,
         "log_dir": "saved/runs"
     }
 }
