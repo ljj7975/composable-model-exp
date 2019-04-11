@@ -45,7 +45,6 @@
 \newcommand{\red}[1]{\textcolor{red}{#1}}
 
 
-
 \title{Dynamic Model Construction for Efficient Classification}
 
 \author{
@@ -61,43 +60,43 @@
 
 \begin{abstract}
 
-One of the major drawback of neural network in the domain of classification is that retraining is unavoidable when the target set of class changes. For this reason, networks are often designed to be wide and deep. However, this leads to increase the necessary computations which has a direct impact on the efficiency of the model. In this work, I study how different combination of loss function and last activation function affects the classification output and present a new way to add or remove a class from target class set without retraining. With this technique, a model can be adjusted to classify any combination of target classes and the minimal resource usage is guaranteed as the adjusted model involves the same amount of computations as the model trained to classify the same set of class explicitly.
+One of the major drawback of neural network based classifier is that retraining is inevitable when target set of classes changes. For this reason, such networks are often designed to be wide and deep to support all possible classes. As a results, they are computationally expensive and can lead to unpleasant user experience. In this work, I propose Composing algorithm which allows dynamic construction of a classifier using class-level transfer learning. Composing algorithm does not require any extra computation but found to be less accurate once trained with cross entropy loss. I realize that sigmoid with binary cross entropy loss can minimize the accuracy decrease and evaluate how different loss function changes the behaviour of constructed model. After thorough experiments on MNIST, keyword spotting, and CIFAR-100, it is found that sigmoid with binary cross entropy loss is more suitable for Composing algorithm but decrease in accuracy is inevitable as number of classes increases.
 
 \end{abstract}
 
 \section{Introduction}
 
-Over the last decade, deep learning has became {\it de facto} approach for numerous classification problems as it leads to high accuracy for each problem~\cite{}. However, deep learning based approaches requires much larger computation and less flexible than existing techniques. When a classifier is trained, it expects a set of target classes, a set of classes which it will be trained to classify. Once training is completed, a model can be deployed and classify unseen data assuming that the given data belongs to the target set. However, in practice, there are two extreme cases where this approach falls apart.
+Over the last decade, neural network has became {\it de facto} approach for numerous classification problems as it leads to high accuracy~\cite{lecun1998gradient, chen2014small, krizhevsky2009learning}. However, neural network based approaches require much larger computation and less flexible than preexisting techniques. When training neural network based classifier, a set of target class must be provided in order to obtain reliable classifier. A trained model then can be deployed and classify unseen data assuming that true class of the given data belongs to target set which the model is trained on. However, in practice, this is not always the case and there exist two extreme cases where this setup falls apart.
 
-The first case is when the set of true classes of unseen data are only a subset of the target set. If such set of classes are known, the trained model is considered to be an excessive representation of the true classifier as it wastes its computation calculating probabilities for unnecessary classes. The ideal solution for this problem is to retrain a model with new target set which only consists the true classes of the corresponding data.
+The first case is when a set of true class contains only few classes from target class set. In this case, the trained model is considered to be an excessive representation of the true classifier and wastes the resources as it calculates probabilities for unnecessary classes. This can be avoid when a set of true class is known prior to training, by training the model to classify only the necessary classes.
 
-The other case is when the true class of unseen data does not belong to target classes. Unless training involves an additional class for the data which does not belong to any of target classes, the model will classify the unseen data to be one of the target classes and such misclassification can lead to system failure. The ideal solution for this issues is also retraining, minimizing the misclassification.
+The other case is when the true class of an unseen data does not exist in the target classes. Unless the model is explicitly trained to classify such class as unknown, the model will classify the unseen data to be one of target classes and such misclassification can lead to system failure. The ideal solution for this issues is to train a model again with the new class, minimizing the chance of misclassification.
 
-However, training is a very expensive operation. It can take days to obtain the new model which hinders the efficient management of a service. As a results, most of the academic studies are focused on minimizing resource usages of the model while preserving the highest accuracy.
-
-However, there exist the other approach for this problem; dynamic construction of a model for the changing set of target classes. There are three conditions which the constructed model must satisfy:
+However, training a neural network is a very expensive operation. It can take days to obtain reliable classifier and this hinders the efficient management of a service. To combat this issue, most of the academic works focus on minimizing resource usages of a network while preserving the highest accuracy. However, there exist an alternative solution to this problem: constructing a model dynamically adapting to the change in target set while minimizing decrease in accuracy and increase in resource usage. There are three conditions which the optimal solution must satisfy:
 
 \begin{enumerate}
-    \item \textbf{Minimal accuracy degradation} : the constructed model should have simialr accuracy as the base model
-    \item \textbf{Dynamic addition and removal} : it must be easy to add and remove a class from the constructed model
+    \item \textbf{Minimal accuracy degradation} : the difference in accuracy between constructed model and the base model should be small
+    \item \textbf{Dynamic class addition and removal} : it must be easy to add and remove a class from the constructed model
     \item \textbf{Efficient classification} : the constructed model should not require more computations than the base model
 \end{enumerate}
 
-It is found that this is rather difficult problem as it requires analyzing how each neuron is related to target classes. In this work, I extend the idea of transfer learning and obtain class-specific relationship between penultimate layer and the output layer. I present Composing algorithm, which utilizes such relationship to construct a classifier dynamically for any variations in target set of classes. With such a large number of knowledge sharing among various models, I realize the limitation of the standard cross entropy loss training and show that sigmoid with binary cross entropy loss is more suitable for Composing algorithm. I also include a set of experiments measuring how these two loss functions affects the accuracy of composed model. Conducted on MNIST, keyword spotting, and CIFAR-100 tasks, Composing algorithm is shown to be computationally efficient while preserving the similar accuracy as the base model which is trained explicitly to classify the same set of target classes.
+In the above criteria, base model refers to a model which is trained explicitly to classify the same set of class as the constructed model.
+
+It is found that dynamic model construction is quite challenging as the optimal solution requires a technique which considers relationship between each of the neurons and the output value for every class. In this paper, I present Composing algorithm which obtains such information by class-level transfer learning. As Composing algorithm involves mixing up the weights obtained from distinct models, I realize the limitation of standard cross entropy loss approach and show that sigmoid with binary cross entropy loss is more suitable for Composing algorithm. This has been demonstrated with a set of experiment as well. Conducted on MNIST, keyword spotting, and CIFAR-100, it is found that accuracy degradation is inevitable as number of classes increases but can be minimized when models are trained with sigmoid and binary cross entropy loss.
 
 \section{Related Works}
 
-The three criteria for dynamic model construction have their focus on model flexibility and resource usage. Even though these two aspects are quite related, they are generally considered as two separate problems. Therefore, dynamic model construction problem can be categorized differently depending on which direction it is approached. The three most relevant domains are: ensemble learning, multi-task learning, and transfer learning
+Even though the three criteria for dynamic model construction are quite related, there exist distinct set of problems aiming to achieve each criteria. The three most relevant domains are: ensemble learning, multi-task learning, and transfer learning
 
 \subsection{Ensemble Learning}
-Ensemble learning is a common technique in the field of machine learning which achieves greater performance by combining outputs from multiple models which are independent. The most famous techniques are voting, weighting, bagging and boosting~\cite{dietterich2000ensemble, breiman1996bagging, freund1996experiments}. Even though ensemble learning is considered to be easy to implement, ensemble techniques assume that models are independent. As a result, most ensemble learning algorithms require each model to process the input data parallel violating the efficiency requirement.
+Ensemble learning is a common technique in the field of machine learning which achieves higher accuracy by combining outputs of multiple models. The most famous techniques include voting, weighting, bagging and boosting~\cite{dietterich2000ensemble, breiman1996bagging, freund1996experiments}. Even though ensemble learning is considered to be easy to implement, ensemble learning assumes that models are independent. As a result, most ensemble learning algorithms require each model to process the input data parallel violating the efficiency requirement of the dynamic model construction problem.
 
 \subsection{Multi-task Learning}
-On the other hand, multi-task learning takes different approach; combining multiple models into a single model. The key assumption is that if tasks are related, sharing information among tasks throughout training will increase the performance on each task. There exist many variations depending on types and amounts of information to be shared among tasks. Two main categories of multi-task learnings are parameter sharing and feature sharing~\cite{ruder2017overview, Caruana1993MultitaskLA, duong2015low, lu2017fully} which differ by type of the shared information. Even though multi-task learning has the similar architecture with the desired solution, it still fails to satisfy the efficiency requirements as most of solutions involves having extra layers for sharing information while keeping the same model architecture for each tasks.
+On the other hand, multi-task learning takes the opposite approach; combine a set of networks to share the knowledge learned from each task. The key assumption is that if tasks are related, sharing knowledge throughout training will increase the performance of each network. Techniques for multi-task learning are often classified into two depending on the type of information being shared: parameter sharing and feature sharing~\cite{ruder2017overview, Caruana1993MultitaskLA, duong2015low, lu2017fully}. Its architecture and consideration of multi-tasks can be adapted to the dynamic model construction problem. However it fails to satisfy the efficiency requirements as most solutions have extra layers to share information among tasks without any modification to each model.
 
 \subsection{Transfer Learning}
 
-Transfer learning is inspired by the same assumption as multi-task learning; if tasks are related, sharing knowledge improves the performance. However, the key difference between two problem is that transfer learning use the same model architecture for different tasks. Transfer learning involves following processes: pre-training and fine-tuning. First, a model is pre-trained with a task and learns to select important features. Then the model is fine-tuned for the target task, putting all of its effort to produce the best result for the target task exploiting selected features~\cite{yosinski2014transferable}. It is found that transfer learning is very powerful for achieving high accuracy, as demonstrated in wide range of problems~\cite{raina2007self, egan2004effects, glorot2011domain}. Unlike two aforementioned domains, transfer learning does not add any computations for the fine-tuned task. However, knowledge sharing is mostly studied on task-level and limited work is found for class-level transfer learning.
+Transfer learning is inspired by the same assumption as multi-task learning; sharing knowledge among tasks can improve the performance. However, the key difference between two problems is that transfer learning use the same model architecture for different tasks. Transfer learning involves pre-training and fine-tuning. First, a model is pre-trained on a task and learns to select important features. Then the same model is fine-tuned for a target task as trained weights are adjusted to produce the best result for the target task~\cite{yosinski2014transferable}. It is found that transfer learning is very powerful as demonstrated in a wide range of problems~\cite{raina2007self, egan2004effects, glorot2011domain}. Unlike two aforementioned domains, transfer learning does not add any computations for the fine-tuned task. However, knowledge sharing is mostly studied on task-level and limited work exists for class-level transfer learning.
 
 \section{Composing Algorithm}
 
@@ -270,9 +269,9 @@ However, as observed with MNIST, sigmoid with BCE loss shows the least relative 
 
 CIFAR is a collection of tiny colour images from the web introduced by~\cite{krizhevsky2009learning}. There exist two kind of CIFAR varying on number of classes: CIFAR-10 and CIFAR-100. The following experiment is constructed with CIFAR-100 which constitutes of 600 images of 100 classes.
 
-For this experiment, I have implemented \texttt{DenseNet}, a state of the art model architecture for CIFAR dataset~\cite{huang2017densely}. Building upon the architecture with residual connection, the feature maps of all preceding layers are used as inputs for each layer. The network has three dense blocks with transition layers between which changes the feature-map sizes by convolution and pooling. The original implementation involves 300 epochs of training using stochastic gradient descent with learning rate decrease by factor of ten from 0.1 to 0.001.
+For this experiment, I have implemented \texttt{DenseNet}, a state of the art model architecture for CIFAR dataset~\cite{huang2017densely}. Building upon the architecture with residual connection, the feature maps of all preceding layers are used as inputs for each layer. The network has three dense blocks with transition layers between which changes the feature-map sizes by convolution and pooling. The original implementation achieves accuracy of 80\% with 300 epochs of stochastic gradient descent. Learning rate must decrease throughout the training from 0.1 to 0.001 by factor of ten.
 
-Table \ref{table:cifar} summerizes accuracy of models throughout Composing algorithm, trained with different loss functions. As training \texttt{DenseNet} for CIFAR-100 is very expensive, only one base model has been trained for each loss functions. However, composing experiments are conducted with 10 iterations as mentioned in the previous section. In this experiment, the base models are trained for 200 epochs achieving accuracy of 69.95\% for CE loss, 64.23\% for softmax with BCE loss, and 64.72\% for sigmoid with BCE loss. Fine-tuned models achieve average accuracy of 86.12\%, 88.63\%, and 87.79\% respectively.
+Table \ref{table:cifar} summarizes the accuracy of models throughout Composing algorithm, trained with different loss functions. As training \texttt{DenseNet} for CIFAR-100 is very expensive, only one base model has been trained for each loss functions. However, composing experiments are conducted with 10 iterations, same as the preceding experiments. In this experiment, the base models are trained for 200 epochs achieving accuracy of 69.95\% for CE loss, 64.23\% for softmax with BCE loss, and 64.72\% for sigmoid with BCE loss. Fine-tuned models are trained for 100 epochs with average accuracy of 86.12\%, 88.63\%, and 87.79\% respectively.
 
 \begin{table}[t]
     \centering
@@ -302,20 +301,17 @@ Table \ref{table:cifar} summerizes accuracy of models throughout Composing algor
     \label{figure:composed_cifar}
 \end{figure}
 
-Again, figure \ref{figure:composed_cifar} shows how accuracy of composed model changes as number of classes increases. It is found that CIFAR-100 introduces greater rate of relative decrease than MNIST and KWS. I believe this is due to the fact that CIFAR-100 involves much larger number of classes. Again, limitation of CE loss is clear as it leads to 24.60\% relative decrease with respect to the base model accuracy. On the other hand, sigmoid with BCE loss introduces the least relative decrease of 11.28\%.
+Figure \ref{figure:composed_cifar} shows how accuracy of composed model changes as number of classes increases. It is found that CIFAR-100 introduces greater rate of relative decrease than MNIST and KWS. I believe this is due to the fact that CIFAR-100 involves much larger number of classes. Again, limitation of CE loss is clear as it leads to 24.60\% relative decrease with respect to the base model accuracy. On the other hand, sigmoid with BCE loss introduces the least relative decrease of 11.28\%.
 
-\section{Discussion}
+\section{Conclusion and Discussion}
 
-base model for each number of classes
+Realizing the inefficiency with the traditional classifier deployment, I propose Composing algorithm which achieves dynamic construction of a model for an efficient classification adapting to the change in target class set. As loss function plays a key role in Composing algorithm, it is shown both theoretically and empirically that CE loss leads to greater loss of accuracy than sigmoid with BCE loss.
 
-average layers
+Even though sigmoid with BCE loss leads to minimal decrease in accuracy, it is shown to have strong correlation with the number of classes. In the case of CIFAR-100, it has shown relative decrease of 11.28\% which can be crucial in many cases. Building upon this work, exploring other type of loss such as MSE loss and KL divergence loss would be an interesting study.
 
-KL loss MSE etc
+Next, proposed Composing algorithm assumes that the last layer is fully-connected. However, some networks apply global averaging as it last operation to minimize computation. I strongly believe that the same approach works for such networks if fine-tuning is achieved for the last convolutional layer.
 
-\section{Conclusion}
-In this section please concisely describe what you are going to achieve in this project. E.g., formulate your problem precisely (mathematically), present the technical challenges (if any), discuss the tools or datasets that you will build on, state your goals, and come up with a plan for evaluation.
-
-For your own sake, you might want to lay out a time line, so that you can keep a good track of your project.
+Overall, I have shown how much flexibility one can achieve for classification by fine-tuning the last fully-connected layer. However, as models involve more and more layers, such flexibility and computational savings may not add much benefit. Therefore, it is necessary extend this idea to save more computations than just last layer, in order for this idea to be meaningful for practical use.
 
 \newpage
 
