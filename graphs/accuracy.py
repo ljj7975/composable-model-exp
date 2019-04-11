@@ -10,6 +10,7 @@ results = eval(open(summary_file).read())
 
 EXP_LOSS = ['logsoftmax_nll_loss', 'softmax_bce_loss', 'sigmoid_bce_loss']
 num_model = results['num_model']
+step_size = results.get('step_size', 1)
 
 print("num_model", num_model)
 
@@ -29,22 +30,22 @@ for loss in EXP_LOSS:
     print("\t", "avg:", np.mean(ft_values))
     print("\t", "min:", np.min(ft_values))
     print("\t", "max:", np.max(ft_values))
-	
-    values = value['combined_model']['average_accuracy']
+
+    values = np.array(value['combined_model']['average_accuracy'])
     print("   combined model")
     print("\t", "final acc:", values[-1])
     gap = base_acc - values[-1]
     print("\t", "gap from base:", round(100 * gap / base_acc, 2), "%")
 
     num_class = results.get('num_class', len(values))
-    legend = plt.plot(np.arange(num_class) + 1, values)
+    legend = plt.plot((np.arange(num_class/step_size) + 1) * step_size, values)
     legends.append(legend)
 
 font_size = 13
 plt.xlabel('number of classes', fontsize=font_size)
 plt.ylabel('accuracy (%)', fontsize=font_size)
 
-plt.ylim(75, 100)
+plt.ylim(85, 100)
 
 fig.legend(legends,     # The line objects
            labels=EXP_LOSS,

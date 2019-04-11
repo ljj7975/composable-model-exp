@@ -228,17 +228,17 @@ def evaluate_models(saved_model_dir, num_iter, step_size):
     cp.print_progress("< evaluate base model >")
     num_base_model, base_model_acc = evaluate_base_model(saved_model_dir)
     cp.print_progress("< base model acc >")
-    cp.print_progress(json.dumps(base_model_acc, indent=4, separators=(': ')))
+    cp.print_progress(json.dumps(base_model_acc, indent=4))
 
     cp.print_progress("< evaluate fine tuned model >")
     num_fine_tuned_model, fine_tuned_model_acc = evaluate_fine_tuned_model(saved_model_dir)
     cp.print_progress("< fine tuned model acc >")
-    cp.print_progress(json.dumps(fine_tuned_model_acc, indent=4, separators=(': ')))
+    cp.print_progress(json.dumps(fine_tuned_model_acc, indent=4))
 
     cp.print_progress("< evaluate combined model >")
     num_combined_model, combined_model_acc = evaluate_combined_model(saved_model_dir, num_iter, step_size)
     cp.print_progress("< combined model acc >")
-    cp.print_progress(json.dumps(combined_model_acc, indent=4, separators=(': ')))
+    cp.print_progress(json.dumps(combined_model_acc, indent=4))
 
     assert num_base_model == num_combined_model
     assert num_base_model == num_fine_tuned_model
@@ -278,6 +278,7 @@ def main(train_flag, saved_model_dir, num_model, num_iter, step_size):
     results['num_class'] = base_config['n_class']
     results['target_class'] = TARGET_CLASS
     results['step_size'] = step_size
+    results['num_iter'] = num_iter
 
     cp.print_warning("< EXP RESULTS >")
     for loss in EXP_LOSS:
