@@ -186,9 +186,9 @@ def evaluate_combined_model(saved_model_dir, num_iter, step_size):
             #     config['data_loader']['args']['data_dir'] = "/media/brandon/SSD" + config['data_loader']['args']['data_dir']
 
             config['metrics'] = ["pred_acc"]
-            ordered_class = TARGET_CLASS.copy()
 
             for _ in range(num_iter):
+                ordered_class = TARGET_CLASS.copy()
                 random.shuffle(ordered_class)
 
                 target_class = []
