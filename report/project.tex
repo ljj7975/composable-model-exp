@@ -69,9 +69,9 @@ One of the major drawback of neural network in the domain of classification is t
 
 Over the last decade, deep learning has became {\it de facto} approach for numerous classification problems as it leads to high accuracy for each problem~\cite{}. However, deep learning based approaches requires much larger computation and less flexible than existing techniques. When a classifier is trained, it expects a set of target classes, a set of classes which it will be trained to classify. Once training is completed, a model can be deployed and classify unseen data assuming that the given data belongs to the target set. However, in practice, there are two extreme cases where this approach falls apart.
 
-The first case is when the set of true classes of unseen data are only a subset of the target set. If such set of classes are known, the trained model is considered to be an excessive representation of the true classifier as it wastes its computation calculating probabilities for uncessary classes. The ideal solution for this problem is to retrain a model with new target set which only consists the true classes of the corresponding data.
+The first case is when the set of true classes of unseen data are only a subset of the target set. If such set of classes are known, the trained model is considered to be an excessive representation of the true classifier as it wastes its computation calculating probabilities for unnecessary classes. The ideal solution for this problem is to retrain a model with new target set which only consists the true classes of the corresponding data.
 
-The other case is when the true class of unseen data does not belong to target classes. Unless training involves an additional class for the data which does notbelong to any of target classes, the model will classify the unseen data to be one of the target classes and such misclassification can lead to system failure. The ideal solution for this issues is also retraining, minimizing the misclassification.
+The other case is when the true class of unseen data does not belong to target classes. Unless training involves an additional class for the data which does not belong to any of target classes, the model will classify the unseen data to be one of the target classes and such misclassification can lead to system failure. The ideal solution for this issues is also retraining, minimizing the misclassification.
 
 However, training is a very expensive operation. It can take days to obtain the new model which hinders the efficient management of a service. As a results, most of the academic studies are focused on minimizing resource usages of the model while preserving the highest accuracy.
 
@@ -83,7 +83,7 @@ However, there exist the other approach for this problem; dynamic construction o
     \item \textbf{Efficient classification} : the constructed model should not require more computations than the base model
 \end{enumerate}
 
-It is found that this is rather difficult problem as it requires analyzing how each neurons are related to target classes. In this work, I extend the idea of transfer learning and obtain class-specific relationship between penultimate layer and the output layer. I present Composing algorithm, which utilizes such relationship to construct a classifier dynamically for any variations in target set of classes. With such a large number of knowledge sharing among various models, I realize the limitation of the standard cross entropy loss training and show that sigmoid with binary cross entropy loss is more suitable for composing algorithm. I also include a set of experiments measuring how these two loss functions affects the accuracy of composed model. Conducted on MNIST, keyword spotting, and CIFAR-100 tasks, composing algorithm is shown to be computationally efficient while preserving the similar accuracy as the base model which is trained explicitly to classify the same set of target classes.
+It is found that this is rather difficult problem as it requires analyzing how each neuron is related to target classes. In this work, I extend the idea of transfer learning and obtain class-specific relationship between penultimate layer and the output layer. I present Composing algorithm, which utilizes such relationship to construct a classifier dynamically for any variations in target set of classes. With such a large number of knowledge sharing among various models, I realize the limitation of the standard cross entropy loss training and show that sigmoid with binary cross entropy loss is more suitable for Composing algorithm. I also include a set of experiments measuring how these two loss functions affects the accuracy of composed model. Conducted on MNIST, keyword spotting, and CIFAR-100 tasks, Composing algorithm is shown to be computationally efficient while preserving the similar accuracy as the base model which is trained explicitly to classify the same set of target classes.
 
 \section{Related Works}
 
@@ -97,52 +97,60 @@ On the other hand, multi-task learning takes different approach; combining multi
 
 \subsection{Transfer Learning}
 
-Transfer learning is inspired by the same assumption as multi-task learning; if tasks are related, sharing knowledge improves the performance. However, the key difference between two problem is that transfer learning use the same model architecture for different tasks. Transfer learning involves following processes: pre-training and fine-tuning. First, a model is pre-trained with a task and learns to select important features. Then the model is fine-tuned for the target task, putting all of its effort to produce the best result for the target task exploiting selected features~\cite{yosinski2014transferable}. It is found that transfer learning is very powerful for achieving high accuracy, as demonstrated in wide range of problems~\cite{raina2007self, egan2004effects, glorot2011domain}. Unlike two aforementioned domains, transfer learning does not add any computations for the fine-tuned task. However, knolwedge sharing is mostly studied on task-level and limited work is found for class-level transfer learning.
+Transfer learning is inspired by the same assumption as multi-task learning; if tasks are related, sharing knowledge improves the performance. However, the key difference between two problem is that transfer learning use the same model architecture for different tasks. Transfer learning involves following processes: pre-training and fine-tuning. First, a model is pre-trained with a task and learns to select important features. Then the model is fine-tuned for the target task, putting all of its effort to produce the best result for the target task exploiting selected features~\cite{yosinski2014transferable}. It is found that transfer learning is very powerful for achieving high accuracy, as demonstrated in wide range of problems~\cite{raina2007self, egan2004effects, glorot2011domain}. Unlike two aforementioned domains, transfer learning does not add any computations for the fine-tuned task. However, knowledge sharing is mostly studied on task-level and limited work is found for class-level transfer learning.
 
-\section{Dynamic Model Construction with Class-level Transfer Learning}
+\section{Composing Algorithm}
+
+In this section, I introduce Composing algorithm which enables dynamic model construction for efficient classification. I also discuss the necessary conditions to achieve the best accuracy from Composing algorithm.
 
 \subsection{Approach}
 
-In this section, I introduce how to achieve dynamic model construction which adopts to the change in target class set.
+\begin{figure*}[t!]
+  \centering
+  \includegraphics[scale=0.32,trim={0mm 0mm 0mm 0mm},clip]{long2017learning.png}
+\end{figure*}
 
-One of the common technique used for multi-task learning is to use distinct fully-connected layer for each task~\cite{huang2016mtnet, girshick2015fast, long2017learning}. In this setting, each task is trained independently while weights for upstream layers are shared among classes. Once model is trained, a task can be discarded from populating output if it is no longer necessary. This is achieved simply by removing corresponding fully-connected layer.
+\begin{figure*}[t!]
+	\centering
+	\begin{subfigure}[b]{.65\linewidth}
+		\centering
+		\includegraphics[scale=0.25,trim={0mm 0mm 0mm 0mm},clip]{girshick2015fast.png}
+	\end{subfigure}%
+	\begin{subfigure}[b]{.35\linewidth}
+		\centering
+		\includegraphics[scale=0.15,trim={0mm 0mm 0mm 0mm},clip]{huang2016mtnet.png}
+	\end{subfigure}
+	\caption{Model architectures proposed by ~\cite{long2017learning} (top), ~\cite{huang2016mtnet} (bottom right), and  ~\cite{girshick2015fast} (bottom left); Their approach for multi-task learning is to assign distinct fully-connected layer for each task.}
+	\label{figure:mutli-task-learning}
+\end{figure*}
 
-Next consider a case of transfer learning. Pre-training a model and fine-tuning for target task can leads to increase in performance. There is no change in model architecture throughout this process. Therefore, fine-tuned model uses the same amount of computation as the model which is explicitly trained to accomplish the same task.
+One of the common approach for multi-task learning is to assign distinct fully-connected layer for each task (see Figure~\ref{figure:mutli-task-learning}). With such architecture, each task is trained independently while weights for upstream layers are shared among tasks. Once the training completes for the combined model, a task can be discarded from populating output by removing corresponding fully-connected layer.
 
-Exploiting these characteristics in two distinct domains, the proposed algorithm can be summarized as following:
+Next, consider a case of transfer learning. It is found that pre-training a model and fine-tuning the model for target task can leads to increase in accuracy. There is no change in model architecture throughout this process. Therefore, fine-tuned model uses the same amount of computation as the model that is explicitly trained to accomplish the same task.
+
+Recall the criteria for dynamic model construction. Above multi-task learning approach achieves the dynamic addition and removal of a class and transfer learning guarantees the necessary efficiency. Exploiting these two techniques in two different domains, the proposed algorithm has the following step:
 
 \begin{enumerate}
-    \item pre-train a model as if it is targeting multi-classification problem
-    \item freeze the model parameters
-    \item fine-tune a model to obtain class-specific weights (step 4 $\sim$ 7)
-    \item construct a dataset which labels corresponding class as positive and the others as negative.
-    \item replace the last full-connected layer with two classes
-    \item fine-tune the last layer with the constructed data
-    \item store weights for positive class
-    \item at the time of the inference, the last fully-connected layer is dynamically constructed to classify the given set of class by loading corresponding weights obtained from fine-tuning
+    \item Pre-train a model as if it is multi-classification problem
+    \item Freeze the model parameters
+    \item Repeat step 4 $\sim$ 7 for each class
+    \item Construct a dataset which labels target class as positive and the others as negative.
+    \item Replace the last full-connected layer for two classes
+    \item Fine-tune the last layer using the new dataset
+    \item Retrieve class-specific weights (weights for positive class) of the fully-connected layer
+    \item For every variation of target set, it is possible to construct corresponding model by replacing the last layer with the class-specific weights obtained from fine-tuning.
 \end{enumerate}
 
-For simplicity, I will call this algorithm as composing algorithm, the model trained for multi-class as base model, models constructed from step 4 $\sim$ 7 as fine-tuned models and the model constructed from the last step as composed model.
+For simplicity, I decide to call this algorithm as Composing algorithm, the model trained for multi-class as base model, models constructed from step 4 $\sim$ 7 as fine-tuned models and the model constructed from the last step as composed model.
 
-\red{to be raised in introduction}
+Composing algorithm achieves dynamic addition and removal of a class by attaching and discarding corresponding fully-connected connections.
+With such flexibility, retraining a classifier is no longer necessary. Furthermore, note that even though a class has not participated for step 1, it is possible to construct a composed model with that class as long as the same base model is used for fine-tuning.
 
-Recall that the desired composed model should satisfy the following conditions:
-
-\begin{enumerate}
-    \item \red{preserve accuracy}
-    \item Dynamic addition and removal of a class must be possible
-    \item Minimal computation is desired for an inference
-\end{enumerate}
-
-Addition and removal of a class is possible with the composing algorithm as it can be achieved simply by adding or removing corresponding fully-connected connections.
-With such a simply addition, retraining the base model is no longer necessary, which is unavoidable in the previous setting. Furthermore, note that even though a class does not contributes to step 1, it can be fine-tuned and added for step 8 as long as the same base model is used for fine-tuning.
-
-From fine-tuning and composing, we only work with the last full-connected layer; when a model is fine-tuned for a class, the weights we store are from the fully-connected layer.
-Since we do not use weights trained for negative class, the architecture of the composed model is same as the base model, assuming that the composed model is designed to classify all classes which base model is trained for. Therefore, we can conclude that the composed model does not add any computations compared to the base model.
+When we are constructing a composed model, we only retrieve weights for positive class from each of fine-tuned model. Therefore, the composed model has exactly the same number of parameters with the base model. As a result, composing model does not violate the efficiency requirements.
 
 \section{Accuracy Preservation}
 
-The most challenging part with the composable model problem is assuring that the composed model suffers from the minimal change in accuracy. In this section, I discuss how such condition can be satisfied with the algorithm presented in the previous section.
+However, does Composing algorithm also guarantees the accuracy requirements? To answer this question, we need to understand how different loss function affects the behaviour of the composed model.
 
 \subsection{Limitations with cross entropy loss}
 
@@ -223,7 +231,8 @@ Table \ref{figure:composed_mnist} summarizes how the accuracy changes as number 
 
 In order to evaluate the universality of composing algorithm, I extend the idea to keyword spotting where the input data is audio. The goal of Keyword Spotting (KWS) is to detect an audio of pre-trained keywords, such as “Hey Siri”. Since the first menaing results introduced by~\cite{chen2014small}, Neural network has been the {\it de facto} approach for KWS. In this experiment, I implement \texttt{res15-narrow} introduced by~\cite{tang2018deep}, which achieves accuracy of 94\% for 12 keywords on Google’s Speech Commands Dataset~\cite{speechcommandsdataset}. \texttt{res15-narrow} comprises 6 residual blocks with 19 feature maps where each residual block is composed of bias-free convolutional and batch normalization layer.
 
-As opposed to the previous studies with Google’s Speech Commands Dataset where accuracy is evaluated on 12 keywords, I include all 30 keywords as I am intested in how stable the copmosing algorithm with respect to the increasing number of classes. Following the standard feature extraction process for audio, I first construct Forty-dimensional Mel-Frequency Cepstrum Coefficient (MFCC) frames and stack them using 30ms windows with a 10ms shift. Since the dataset has one-second long utterances of each word, the final proceesed input size is 101 × 40.
+As opposed to the previous studies with Google’s Speech Commands Dataset where accuracy is evaluated on 12 keywords, I include all 30 keywords as I am interested in how stable the composing algorithm with respect to the increasing number of classes. Following the standard feature extraction process for audio, I first construct Forty-dimensional Mel-Frequency Cepstrum Coefficient (MFCC) frames and stack them using 30ms windows with a 10ms shift. Since the dataset has one-second long utterances of each word, the final processed input size is
+$101\times40$.
 
 Throughout 10 experiments conducted, stochastic gradient descent is used to train both base model and fine-tuned model with decreases in learning rate from 0.1 to 0.0001, stepping by a factor of ten. The base model is trained for 30 epochs with decrease in learning rate at 10 and 20 epochs. Unlike MNIST, the standard CE loss produces the best results; average accuracy of 93.11\%. It is found that the base model achieves average accuracy of 91.03\% and 89.63\% when trained using softmax with BCE loss and sigmoid with BCE loss respectively.
 

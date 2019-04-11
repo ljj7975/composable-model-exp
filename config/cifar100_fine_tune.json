@@ -16,7 +16,7 @@
     "data_loader": {
         "type": "Cifar100DataLoader",
         "args":{
-            "data_dir": "/data/cifar100",
+            "data_dir": "/home/r33tang/scratch/cifar100",
             "batch_size": 128,
             "shuffle": true,
             "validation_split": 0.1,
@@ -46,8 +46,8 @@
     },
     "trainer": {
         "epochs": 100,
-        "save_dir": "saved/",
-        "save_period": 1,
+        "save_dir": "/home/r33tang/scratch/saved/",
+        "save_period": 50,
         "verbosity": 2,
 
         "monitor": "min val_loss",
