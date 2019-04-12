@@ -60,29 +60,29 @@
 
 \begin{abstract}
 
-One of the major drawback of neural network based classifier is that retraining is inevitable when target set of classes changes. For this reason, such networks are often designed to be wide and deep to support all possible classes. As a results, they are computationally expensive and can lead to unpleasant user experience. In this work, I propose Composing algorithm which allows dynamic construction of a classifier using class-level transfer learning. Composing algorithm does not require any extra computation but found to be less accurate once trained with cross entropy loss. I realize that sigmoid with binary cross entropy loss can minimize the accuracy decrease and evaluate how different loss function changes the behaviour of constructed model. After thorough experiments on MNIST, keyword spotting, and CIFAR-100, it is found that sigmoid with binary cross entropy loss is more suitable for Composing algorithm but decrease in accuracy is inevitable as number of classes increases.
+One of the major drawbacks of neural network based classifier is that retraining is inevitable when target set of classes changes. For this reason, networks created for classification are often wide and deep to support all possible classes. This increases the amount of necessary computations and can lead to unpleasant user experience. In this work, I propose Composing algorithm which enables dynamic construction of a classifier using class-level transfer learning. Composing algorithm minimizes unnecessary computations but found to be less accurate once trained with cross entropy loss. I realize that sigmoid with binary cross entropy loss can minimize the accuracy decrease and include evaluation on how different loss function changes the behaviour of constructed model. From the experiments conducted on MNIST, keyword spotting, and CIFAR-100, it is found that sigmoid with binary cross entropy loss is more suitable for Composing algorithm but decrease in accuracy is inevitable as number of classes increases.
 
 \end{abstract}
 
 \section{Introduction}
 
-Over the last decade, neural network has became {\it de facto} approach for numerous classification problems as it leads to high accuracy~\cite{lecun1998gradient, chen2014small, krizhevsky2009learning}. However, neural network based approaches require much larger computation and less flexible than preexisting techniques. When training neural network based classifier, a set of target class must be provided in order to obtain reliable classifier. A trained model then can be deployed and classify unseen data assuming that true class of the given data belongs to target set which the model is trained on. However, in practice, this is not always the case and there exist two extreme cases where this setup falls apart.
+Over the last decade, neural network has became {\it de facto} approach for numerous classification problems as it leads to high accuracy~\cite{lecun1998gradient, chen2014small, krizhevsky2009learning}. However, neural network based approaches require much larger computation and provide less flexible than preexisting techniques. When training a neural network based classifier, a set of target class must be provided in order to obtain a reliable classifier. The trained model then can be deployed and classify unseen data assuming that true class belongs to the target set which the model is trained on. However, in practice, this is not always the case and there exist two extreme cases where this setup falls apart.
 
-The first case is when a set of true class contains only few classes from target class set. In this case, the trained model is considered to be an excessive representation of the true classifier and wastes the resources as it calculates probabilities for unnecessary classes. This can be avoid when a set of true class is known prior to training, by training the model to classify only the necessary classes.
+The first case is when a set of true class contains only few classes from the target set. In this case, the trained model is considered to be an excessive representation of the true classifier and wastes computations as it calculates probabilities for unnecessary classes. This can be avoid when a set of true class is known prior to training, by setting a set of necessary classes as target classes.
 
-The other case is when the true class of an unseen data does not exist in the target classes. Unless the model is explicitly trained to classify such class as unknown, the model will classify the unseen data to be one of target classes and such misclassification can lead to system failure. The ideal solution for this issues is to train a model again with the new class, minimizing the chance of misclassification.
+The other case is when the true class of an unseen data does not exist in the target set. Unless the model is trained explicitly to classify such classes as unknown, the model will classify the unseen data to be one of the target classes and such misclassification can lead to a system failure. The ideal solution for this issues is to retrain a model with the new classes, minimizing the chance of misclassification.
 
-However, training a neural network is a very expensive operation. It can take days to obtain reliable classifier and this hinders the efficient management of a service. To combat this issue, most of the academic works focus on minimizing resource usages of a network while preserving the highest accuracy. However, there exist an alternative solution to this problem: constructing a model dynamically adapting to the change in target set while minimizing decrease in accuracy and increase in resource usage. There are three conditions which the optimal solution must satisfy:
+However, training a neural network is a very expensive operation. It can take days to obtain reliable classifier and this hinders the efficient management of a service. To combat this issue, most of the academic works focus on minimizing resource usages of a network while preserving the high accuracy for every possible class. However, there exist an alternative solution to this problem: constructing a model dynamically adapting to the change in target set while minimizing decrease in accuracy and increase in resource usage. There are three conditions which the optimal solution must satisfy:
 
 \begin{enumerate}
-    \item \textbf{Minimal accuracy degradation} : the difference in accuracy between constructed model and the base model should be small
+    \item \textbf{Minimal accuracy degradation} : the difference in accuracy between a base model and corresponding composed model should be small
     \item \textbf{Dynamic class addition and removal} : it must be easy to add and remove a class from the constructed model
     \item \textbf{Efficient classification} : the constructed model should not require more computations than the base model
 \end{enumerate}
 
-In the above criteria, base model refers to a model which is trained explicitly to classify the same set of class as the constructed model.
+where base model refers to a model which trained explicitly to classify the same set of class which corresponding constructed model is trained to classify.
 
-It is found that dynamic model construction is quite challenging as the optimal solution requires a technique which considers relationship between each of the neurons and the output value for every class. In this paper, I present Composing algorithm which obtains such information by class-level transfer learning. As Composing algorithm involves mixing up the weights obtained from distinct models, I realize the limitation of standard cross entropy loss approach and show that sigmoid with binary cross entropy loss is more suitable for Composing algorithm. This has been demonstrated with a set of experiment as well. Conducted on MNIST, keyword spotting, and CIFAR-100, it is found that accuracy degradation is inevitable as number of classes increases but can be minimized when models are trained with sigmoid and binary cross entropy loss.
+It is found that dynamic model construction is quite challenging as the optimal solution must consider relationship between each of the neurons and the output value of each class. In this paper, I present Composing algorithm which obtains such information by class-level transfer learning. As Composing algorithm involves mixing up the weights obtained from distinct models, I realize the limitation of standard cross entropy loss approach and show that sigmoid with binary cross entropy loss is more suitable for Composing algorithm. This has been demonstrated with a set of experiment as well. From the experiments conducted on MNIST, keyword spotting, and CIFAR-100, it is found that accuracy degradation is inevitable as number of classes increases but can be minimized when models are trained with sigmoid and binary cross entropy loss.
 
 \section{Related Works}
 
@@ -106,18 +106,18 @@ In this section, I introduce Composing algorithm which enables dynamic model con
 
 \begin{figure*}[t!]
   \centering
-  \includegraphics[scale=0.32,trim={0mm 0mm 0mm 0mm},clip]{long2017learning.png}
+  \includegraphics[scale=0.25,trim={0mm 0mm 0mm 0mm},clip]{long2017learning.png}
 \end{figure*}
 
 \begin{figure*}[t!]
 	\centering
 	\begin{subfigure}[b]{.65\linewidth}
 		\centering
-		\includegraphics[scale=0.25,trim={0mm 0mm 0mm 0mm},clip]{girshick2015fast.png}
+		\includegraphics[scale=0.22,trim={0mm 0mm 0mm 0mm},clip]{girshick2015fast.png}
 	\end{subfigure}%
 	\begin{subfigure}[b]{.35\linewidth}
 		\centering
-		\includegraphics[scale=0.15,trim={0mm 0mm 0mm 0mm},clip]{huang2016mtnet.png}
+		\includegraphics[scale=0.13,trim={0mm 0mm 0mm 0mm},clip]{huang2016mtnet.png}
 	\end{subfigure}
 	\caption{Model architectures proposed by ~\cite{long2017learning} (top), ~\cite{huang2016mtnet} (bottom right), and  ~\cite{girshick2015fast} (bottom left); Their approach for multi-task learning is to assign distinct fully-connected layer for each task.}
 	\label{figure:mutli-task-learning}
@@ -125,7 +125,16 @@ In this section, I introduce Composing algorithm which enables dynamic model con
 
 One of the technique proposed for multi-task learning is to share every layer while assigning distinct fully-connected layer for each task (see Figure~\ref{figure:mutli-task-learning}). With such architecture, each task is trained independently while weights for upstream layers are shared among tasks. Once the training completes for the combined model, a task can be discarded from populating output by removing corresponding fully-connected layer. Once the trained model is left with a single fully-connected layer, it has the same architecture as the model explicitly trained to achieve the remaining task.
 
-Recall the criteria for dynamic model construction. Once the above multi-task learning approach is applied for class-level model training, dynamic addition and removal of a class is possible and the efficiency requirement can also be satisfied. Therefore, proposed algorithm has following step:
+Recall the criteria for dynamic model construction. Once the above multi-task learning approach is applied for class-level model training, dynamic addition and removal of a class is possible and the efficiency requirement can also be satisfied. Therefore, proposed algorithm has following step (see Figure \ref{figure:composing_algo}):
+
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[scale=0.3,trim={0mm 0mm 0mm 0mm},clip]{composing_algo.png}
+    \caption{Visualization of Composing algorithm}
+    \label{figure:composing_algo}
+\end{figure}
+
 
 \begin{enumerate}
     \item Pre-train a model as if it is multi-classification problem
@@ -219,7 +228,7 @@ Figure \ref{figure:composed_mnist} summarizes how the accuracy changes for compo
 
 \begin{figure}[t]
     \centering
-    \includegraphics[scale=0.5,trim={0mm 0mm 0mm 0mm},clip]{mnist.png}
+    \includegraphics[scale=0.4,trim={0mm 0mm 0mm 0mm},clip]{mnist.png}
     \caption{Change in composed model accuracy with respect to number of classes for MNIST}
     \label{figure:composed_mnist}
 \end{figure}
@@ -247,7 +256,7 @@ Figure \ref{figure:composed_mnist} summarizes how the accuracy changes for compo
 
 \begin{figure}[t]
     \centering
-    \includegraphics[scale=0.5,trim={0mm 0mm 0mm 0mm},clip]{kws.png}
+    \includegraphics[scale=0.4,trim={0mm 0mm 0mm 0mm},clip]{kws.png}
     \caption{Change in composed model accuracy with respect to number of classes for KWS}
     \label{figure:composed_kws}
 \end{figure}
@@ -290,7 +299,7 @@ CIFAR is a collection of tiny coloured images from the web~\cite{krizhevsky2009l
 
 \begin{figure}[t]
     \centering
-    \includegraphics[scale=0.5,trim={0mm 0mm 0mm 0mm},clip]{cifar100.png}
+    \includegraphics[scale=0.4,trim={0mm 0mm 0mm 0mm},clip]{cifar100.png}
     \caption{Accuracy of composed model for CIFAR-100 with respect to number of classes}
     \label{figure:composed_cifar}
 \end{figure}
