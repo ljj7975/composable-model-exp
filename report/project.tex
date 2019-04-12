@@ -123,174 +123,168 @@ In this section, I introduce Composing algorithm which enables dynamic model con
 	\label{figure:mutli-task-learning}
 \end{figure*}
 
-One of the common approach for multi-task learning is to assign distinct fully-connected layer for each task (see Figure~\ref{figure:mutli-task-learning}). With such architecture, each task is trained independently while weights for upstream layers are shared among tasks. Once the training completes for the combined model, a task can be discarded from populating output by removing corresponding fully-connected layer.
+One of the technique proposed for multi-task learning is to share every layer while assigning distinct fully-connected layer for each task (see Figure~\ref{figure:mutli-task-learning}). With such architecture, each task is trained independently while weights for upstream layers are shared among tasks. Once the training completes for the combined model, a task can be discarded from populating output by removing corresponding fully-connected layer. Once the trained model is left with a single fully-connected layer, it has the same architecture as the model explicitly trained to achieve the remaining task.
 
-Next, consider a case of transfer learning. It is found that pre-training a model and fine-tuning the model for target task can leads to increase in accuracy. There is no change in model architecture throughout this process. Therefore, fine-tuned model uses the same amount of computation as the model that is explicitly trained to accomplish the same task.
-
-Recall the criteria for dynamic model construction. Above multi-task learning approach achieves the dynamic addition and removal of a class and transfer learning guarantees the necessary efficiency. Exploiting these two techniques in two different domains, the proposed algorithm has the following step:
+Recall the criteria for dynamic model construction. Once the above multi-task learning approach is applied for class-level model training, dynamic addition and removal of a class is possible and the efficiency requirement can also be satisfied. Therefore, proposed algorithm has following step:
 
 \begin{enumerate}
     \item Pre-train a model as if it is multi-classification problem
     \item Freeze the model parameters
-    \item Repeat step 4 $\sim$ 7 for each class
-    \item Construct a dataset which labels target class as positive and the others as negative.
-    \item Replace the last full-connected layer for two classes
+    \item Construct a new dataset which labels one class as positive and the others as negative.
+    \item Replace the last full-connected layer for two outputs
     \item Fine-tune the last layer using the new dataset
     \item Retrieve class-specific weights (weights for positive class) of the fully-connected layer
-    \item For every variation of target set, it is possible to construct corresponding model by replacing the last layer with the class-specific weights obtained from fine-tuning.
+    \item Repeat step 4 $\sim$ 7 for each class
+    \item For every variation of target classes, it is possible to construct target set specific classifier by reconstructing the last layer with class-specific weights obtained from fine-tuning.
 \end{enumerate}
 
-For simplicity, I decide to call this algorithm as Composing algorithm, the model trained for multi-class as base model, models constructed from step 4 $\sim$ 7 as fine-tuned models and the model constructed from the last step as composed model.
+For simplicity, this algorithm is referred as Composing algorithm, a model obtained from pre-training as pre-trained model, models constructed from step 4 $\sim$ 7 as fine-tuned models and a model constructed using this technique (obtained from the last step) as composed model.
 
-Composing algorithm achieves dynamic addition and removal of a class by attaching and discarding corresponding fully-connected connections.
-With such flexibility, retraining a classifier is no longer necessary. Furthermore, note that even though a class has not participated for step 1, it is possible to construct a composed model with that class as long as the same base model is used for fine-tuning.
+Composing algorithm achieves dynamic addition and removal of a class by attaching and discarding corresponding fully-connected connections. With such flexibility, retraining a classifier is no longer necessary. Furthermore, Even though a class does not participate for pre-training, it is possible to construct a composed model with the class as long as it is fine-tuned using the same pre-trained model.
 
-When we are constructing a composed model, we only retrieve weights for positive class from each of fine-tuned model. Therefore, the composed model has exactly the same number of parameters with the base model. As a result, composing model does not violate the efficiency requirements.
+Again, only the weights for positive classes are used to construct a composed model. Therefore, the composed model has exactly the same number of parameters as the pre-trained model. In other words, composed model does not violate the efficiency requirements.
 
 \section{Accuracy Preservation}
 
-However, does Composing algorithm also guarantees the minimal accuracy degradation between base model and composed model? To answer this question, we need to understand how different loss function affects the behaviour of the composed model.
+However, does Composing algorithm also guarantee the minimal accuracy degradation compared to pre-trained model? To answer this question, we need to understand how different loss functions affect the behaviour of the composed model.
 
 \subsection{Limitations of cross entropy loss}
 
-State of the art for multi-classification is to use cross entropy (CE) loss, which transforms output by applying softmax and calculates negative log likelihood (NLL) as a measure of loss. Consider the definition of CE loss and NLL loss:
+State of the art loss function for multi-classification is cross entropy (CE) loss, which transforms output by applying softmax and calculates negative log likelihood (NLL) as a measure of loss. Softmax and NLL loss are defined as following:
 
 \begin{align*}
 NegativeLogLikelihood(y, t) & = -\frac{1}{N}\sum_{i=1}^N \left[ t_i \cdot \log y_i\right] \\
 y_i = Softmax(x_i) &= \frac{e^{x_i}}{\sum_{j}e^{x_j}} \\
 \end{align*}
 
-where $x$ is the output of the network and $t$ is the target, one hot encoded vector as in common implementation. In other words, softmax calculates normalized logits of the network output. Therefore, $y$ has value between zero and one and they must sum up to one. Since multi-class classifier rely on the mutually exclusive assumption among target classes, CE loss is the most suitable as it promotes the positive class while suppressing the negative classes.
+where $x$ is the output of the network and $t$ is the target, one hot encoded vector. The definition of the softmax can be summarized as calculating normalized logits of the network output. Therefore, $y$ has values between zero and one and they must sum up to one. Since multi-class classifier rely on the mutually exclusive assumption among the classes, CE loss is found to be the most suitable as it promotes the positive class while suppressing the negative classes.
 
-However, such assumption can lead to unpredictable behaviour with composing algorithm. When CE loss is used throughout the composing algorithm, the loss which used in fine-tuning is computed with respect to the output of negative class. However, for a composed model, probability for each class is computed using independently fine-tuned weights and a class with the highest probability is selected as a final prediction.
+However, such assumption can lead to unpredictable behaviour with Composing algorithm. When CE loss for Composing algorithm, the loss which used in fine-tuning gets computed with respect to the negative class. However, for a composed model, probability for each class is computed with class-specific weights which trained independently and a class with the highest probability is selected to be the final prediction.
 
-For example, let us say there are 3 classes: A, B, and C. For fine-tuning, each dataset is constructed with two classes: a positive class representing the target class and negative class representing all the other classes. For simplicity, positive weights are referred with lower case (a, b, and c) and negative weights with lower case with prime (a', b', and c'). During fine-tuning, loss is calculated in pairs: a -- a', b -- b', c -- c'. However, for composing step, the last layer consists of weights a, b and c. As a results, there is no guarantee that the class with the highest value is in fact the class with highest probability.
+For example, let us say there are three classes: A, B, and C. For fine-tuning, each dataset is constructed with two classes: a positive class and a negative class which represents all the other classes. For simplicity, positive weights are referred with lower case alphabets (a, b, and c) and negative weights with lower case alphabets with prime (a', b', and c'). During the fine-tuning process, loss is calculated in pairs as following: a -- a', b -- b', c -- c'. However, in the composing step, the last layer is constructed with weights a, b and c. As a results, there is no guarantee that the class with the highest output is in fact the class with the highest probability.
 
 \subsection{Binary cross entropy with sigmoid}
 
-Given that CE loss does not preserve the accuracy between the base model and composed model due to mutually exclusive assumption among classes, I propose binary cross entropy (BCE) loss with sigmoid to combat the accuracy degradation.
+Given that CE loss does not preserve the accuracy due to mutually exclusive assumption among classes, I analyze sigmoid with binary cross entropy (BCE) loss.
 
 \begin{align*}
 BinaryCrossEntropy(y, t) & = -\frac{1}{N}\sum_{i=1}^N \left[ t_i \cdot \log y_i + (1 - t_i) \cdot \log (1 - t_i) \right] \\
 y_i = Sigmoid(y_i) &= \frac{1}{1 + e^{-x_i}} \\
 \end{align*}
 
-Unlike CE loss, both sigmoid and BCE loss treat each index independently. In other words, weights for each class obtained from fine-tuning does not depend on other classes. This indicates that class with the highest output from composed model is in fact most likely to be the true class among the target classes.
+Unlike CE loss, both sigmoid and BCE loss treat each output independently. In other words, weights for each class in the fine-tuned model no longer depend on the output of the other class. This indicates that a composed model constructed using sigmoid with BCE loss provides more convincing results as accuracy decrease is smaller than what CE loss provides.
 
-In multi-label classification, the same issue has been raised with CE loss~\cite{liu2017deep}. It is found that the independence guarantee provided by BCE loss with sigmoid is crucial for multi-label classification and enabled successful training of a classifier.
+In multi-label classification, the same issue has been raised with CE loss~\cite{liu2017deep}. It is found that the independence guarantee provided by sigmoid and BCE loss is crucial for multi-label classification and enables successful training of a classifier.
 
 \section{Experiments}
 
-Realizing the limitation of CE loss from the definitions, I have implemented Composing algorithm on MNIST, Keyword Spotting, and CIFAR-100 demonstrating its feasibility. Experiments are implemented with PyTorch and available on github\footnote{\url{https://github.com/ljj7975/composable-model-exp}}.
+In order to understand the severity of accuracy decrease, I have implemented Composing algorithm on MNIST, Keyword Spotting, and CIFAR-100. Experiments are implemented with PyTorch and available on github\footnote{\url{https://github.com/ljj7975/composable-model-exp}}.
 
-For each dataset, I construct a composed model using three different loss functions. First, I include CE loss. Since PyTorch NLL loss implementation expects log probability, log is applied after softmax but it is found that this does not affect the experiments. Next, I use sigmoid with BCE loss which is found to preserve accuracy better than CE loss. Last loss function is softmax with BCE loss. This setting is known to be unstable because BCE loss assumes the independence among classes while softmax does not. In fact, I have observed the training collapse at some point. However, as I report accuracy from the best model, I found the results from this setting still valid and meaningful. This setting should allow me to understand how crucial sigmoid is for sigmoid with BCE loss combination as it simply replace sigmoid with softmax.
+For each dataset, Composing algorithm is applied with three different loss functions. First, I include CE loss. Since PyTorch NLL loss implementation expects log probability, log is applied after softmax but it is found that this does not change my final conclusion. Next, I use sigmoid with BCE loss which is found to be more accurate than CE loss. Last loss function is softmax with BCE loss. This setting is known to be unstable because BCE loss assumes the independence among classes while softmax does not. In fact, I have observed the training collapse at some point. However, as I report accuracy from the best model, I found the results from this setting still valid and meaningful. This setting should allow me to understand how crucial sigmoid is for sigmoid with BCE loss as it simply replaces sigmoid with softmax.
 
-Throughout the experiments, I report accuracy from every model created from Composing algorithm: base model, fine-tuned model, and composed model. Comparing accuracy of base model against corresponding composed model, it is possible to understand how stable Composing algorithm is with respect to each loss function.
+In the following section, I report accuracy of every model created throughout Composing algorithm: pre-trained model, fine-tuned models, and composed model. Comparing accuracy of composed model against pre-trained model, it is possible to understand how each loss function affects the stability of Composing algorithm.
 
-In order to understand how the accuracy of composed model changes with respect to number of classes, I report accuracy from each intermediary composed model as I add a class to construct a composed model. Since fine-tuned accuracy for some classes are greater than the other, I repeat this step 10 times with randomly selection on next class to add and report average.
+Furthermore, I report accuracy of every intermediary composed model as I add a class to construct a composed model. This reveals relationship between number of classes and the performance of composed model. Since fine-tuned accuracies varies a lot depending on the class each model is trained for, I repeat this step 10 times with random selection on the next class to add and report average.
 
 \subsection{MNIST}
 
-MNIST is a standard benchmark for classification~\cite{lecun1998gradient} which consist of images for handwritten digits. Among the wide range of model architecture solving this problem, I have conducted my experiments with \texttt{LeNet-5}~\cite{lecun2015lenet}. \texttt{LeNet-5} is constructed with two convolutional, one dropout and two fully connected layers. The original implementation of \texttt{LeNet-5} has 10 and 20 channels for the first two convolutional layers and produces accuracy of 98\% on MNIST dataset. Since our goal of this experiment is to understand the change in accuracy as different loss functions are used for Composing algorithm, I intentionally limited the expressive power of the network by reconstructing the network with only 5 channels for both convolutional layers.
+MNIST is a standard benchmark for classification~\cite{lecun1998gradient} which comprises images of handwritten digits. Among the wide range of model architecture proposed for this problem, \texttt{LeNet-5} is selected for this experiment~\cite{lecun2015lenet}. \texttt{LeNet-5} is constructed with two convolutional, one dropout and two fully connected layers. The original implementation of \texttt{LeNet-5} has 10 and 20 channels for the first two convolutional layers and produces accuracy of 98\% on MNIST dataset. Since accuracy is the prior measure of comparison in this experiments, such a high accuracy might lead to difficult analysis. Therefore, the network is modified to have 5 channels for both convolutional layers.
 
-Both base model and fine-tuned models are trained using Adam optimizer with learning rate of 0.0001. After conducting 50 experiments, it is found that all three loss function converges to similar accuracy within 5 epochs. The base models converge to average accuracy of 95\% and fine-tuned models converge to 98\% (see Figure \ref{table:mnist}).
+Both pre-trained model and fine-tuned models are trained using Adam optimizer with learning rate of 0.0001. Analyzed from 50 experiments, it is found that all three loss function leads to convergence in 5 epochs. Pre-training converges to average accuracy of 95\% and fine-tuning converges to 98\% (see Table \ref{table:mnist}).
 
-Table \ref{figure:composed_mnist} summarizes how the accuracy changes as number of classes increases for composed model. No matter which loss function is used for Composing algorithm, accuracy of composed model decreases as more classes contributes to the composed model. However, models with softmax based loss is found to suffer at a greater rate than models with sigmoid based loss. With CE loss, the composed model for all 10 classes has an accuracy of 85.86\% with relative decrease of 10.5\% from the base model accuracy. Composed model trained with softmax with BCE loss is found to be the worst. The average final accuracy is 78.50\% which is 17.85\% relative decrease. As expected, sigmoid with BCE loss introduces minimal accuracy degradation and achieves 95.29\% accuracy which is very similar to the base model accuracy.
+Figure \ref{figure:composed_mnist} summarizes how the accuracy changes for composed model as number of classes increases. No matter which loss function is used for Composing algorithm, accuracy of composed model decreases as more classes contribute to composing step. However, models with softmax based loss show greater rate of decrease than model with sigmoid based loss. With CE loss, the composed model for all 10 classes has an accuracy of 85.86\%. This is relative decrease of 10.5\% compared to the pre-trained model. Composing algorithm with softmax with BCE loss is found to show the worst performance. The average final accuracy is 78.50\% which is 17.85\% relative decrease. As proven in the previous section, sigmoid with BCE loss introduces the least accuracy degradation and achieves accuracy of 95.29\% which is very similar to the accuracy of pre-trained model.
+
+\subsection{Keyword Spotting}
+
 
 \begin{table}[t]
     \centering
-    \begin{tabular}{ccccccc}
+    \begin{tabular}{cccccc}
         \toprule[1pt]
         \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Loss function}} &
-        \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Base model}} &
-        \multicolumn{3}{c}{\bf Fine tuned model } &
-        \multicolumn{2}{c}{\bf Composed model } \\
-        \cmidrule(lr){3-5}
-        \cmidrule(lr){6-7}
-        & & average & minimum & maximum & accuracy & relative decrease \\
+        \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Pre-trained }} &
+        \textbf{Fine tuned} &
+        \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{ \bf Composed }} &
+        \textbf{ Relative } \\
+        & & avg (min $\sim$ max) & & \textbf{ decrease } \\
         \midrule
-        LogSoftmax + NLL & 95.8 & 98.02 & 96.29 & 99.24 & 85.74 & 10.50 \\
-        Softmax + BCE & 94.71 & 97.33 & 95.08 & 99.06 & 77.80 & 17.85 \\
-        Sigmoid + BCE & 95.49 & 98.07 & 96.74 & 99.19 & 95.30 & 0.20 \\
+        LogSoftmax + NLL & 95.8 & 98.02 (96.29 $\sim$ 99.24) & 85.74 & 10.50 \\
+        Softmax + BCE & 94.71 & 97.33 (95.08 $\sim$ 99.06) & 77.80 & 17.85 \\
+        Sigmoid + BCE & 95.49 & 98.07 (96.74 $\sim$ 99.19) & 95.30 & 0.20 \\
         \bottomrule[1pt]
     \end{tabular}
-    \caption{Average accuracy of base, fine-tuned, and composed model for MNIST}
+    \caption{Average accuracy of base, fine-tuned, and composed model for MNIST (\%). Relative decrease is calculated using composed model with respect to pre-trained model.}
     \label{table:mnist}
 \end{table}
 
 \begin{figure}[t]
     \centering
     \includegraphics[scale=0.5,trim={0mm 0mm 0mm 0mm},clip]{mnist.png}
-    \caption{Accuracy of composed model for MNIST with respect to number of classes}
+    \caption{Change in composed model accuracy with respect to number of classes for MNIST}
     \label{figure:composed_mnist}
 \end{figure}
 
-\subsection{Keyword Spotting}
-
-To understand the universality of Composing algorithm, I extend this idea to keyword spotting where the input data is audio. The goal of Keyword Spotting (KWS) is to detect an audio of pre-trained keywords, such as “Hey Siri”. Since the first application of deep learning on KWS by~\cite{chen2014small}, Neural network has became standard approach for KWS. In this experiment, I implement \texttt{res15-narrow} introduced by~\cite{tang2018deep}, which achieves accuracy of 94\% for 12 keywords on Google’s Speech Commands Dataset~\cite{speechcommandsdataset}. \texttt{res15-narrow} comprises 6 residual blocks with 19 feature maps where each residual block is composed of bias-free convolutional and batch normalization layer.
-
-As opposed to the previous studies with Google’s Speech Commands Dataset where accuracy is evaluated on 12 keywords, I include all 30 keywords as I am interested in how stable Composing algorithm is with larger number of classes. Following the standard feature extraction process for audio, I first construct Forty-dimensional Mel-Frequency Cepstrum Coefficient (MFCC) frames and stack them using 30ms windows with a 10ms shift. Since the dataset consists of one-second long utterances of each word, the processed input has size of $101\times40$.
-
-Throughout 10 experiments conducted, stochastic gradient descent is used to train both base model and fine-tuned model. Training starts with learning rate of 0.1 but it is decreased to 0.001 by factor of ten at different epochs for each training. Base models are trained for 30 epochs with decrease at 10 and 20th epochs and fine-tuned models are trained for 10 epochs with decrease at 4 and 7th epochs.
-
-Unlike MNIST, it is found type of loss function introduces difference in accuracy for KWS (see Table \ref{table:kws}). \texttt{res15-narrow} achieves the best accuracy when it is trained with CE loss; 93.09\% accuracy from the base model with average accuracy of 95.32\% from fine-tuned models. Softmax with BCE loss achieves 90.94\% accuracy with base model and average accuracy of 91.79\% with fine-tuned models. Sigmoid with BCE loss starts from the lowest accuracy of 89.62\% with fine-tuned models of 91.31\% accuracy.
-
-However, as observed with MNIST, sigmoid with BCE loss shows the least relative decreases from the base model accuracy. While sigmoid with BCE loss leads to relative decrease of 1.44\%, CE loss and softmax with BCE loss shows relative decreases of 3.18\% and 4.57\% respectively. From figure \ref{figure:composed_kws}, it is found that accuracy of composed models decreases again for KWS as number of classes increases.
 
 \begin{table}[t]
     \centering
-    \begin{tabular}{ccccccc}
+    \begin{tabular}{cccccc}
         \toprule[1pt]
         \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Loss function}} &
-        \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Base model}} &
-        \multicolumn{3}{c}{\bf Fine tuned model } &
-        \multicolumn{2}{c}{\bf Composed model } \\
-        \cmidrule(lr){3-5}
-        \cmidrule(lr){6-7}
-        & & average & minimum & maximum & accuracy & relative decrease \\
+        \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Pre-trained }} &
+        \textbf{Fine tuned} &
+        \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{ \bf Composed }} &
+        \textbf{ Relative } \\
+        & & avg (min $\sim$ max) & & \textbf{ decrease } \\
         \midrule
-        LogSoftmax + NLL & 93.09 & 95.32 & 92.57 & 97.59 & 90.13 & 3.18 \\
-        Softmax + BCE & 90.94 & 91.79 & 89.64 & 94.80 & 86.78 & 4.57 \\
-        Sigmoid + BCE & 89.62 & 91.31 & 88.73 & 93.91 & 88.33 & 1.44 \\
+        LogSoftmax + NLL & 93.09 & 95.32 (92.57 $\sim$ 97.59) & 90.13 & 3.18 \\
+        Softmax + BCE & 90.94 & 91.79 (89.64 $\sim$ 94.80) & 86.78 & 4.57 \\
+        Sigmoid + BCE & 89.62 & 91.31 (88.73 $\sim$ 93.91) & 88.33 & 1.44 \\
         \bottomrule[1pt]
     \end{tabular}
-    \caption{Average accuracy of base, fine-tuned, and composed model for KWS}
+    \caption{Average accuracy of base, fine-tuned, and composed model for KWS (\%). Relative decrease is calculated using composed model with respect to pre-trained model.}
     \label{table:kws}
 \end{table}
 
 \begin{figure}[t]
     \centering
     \includegraphics[scale=0.5,trim={0mm 0mm 0mm 0mm},clip]{kws.png}
-    \caption{Accuracy of composed model for KWS with respect to number of classes}
+    \caption{Change in composed model accuracy with respect to number of classes for KWS}
     \label{figure:composed_kws}
 \end{figure}
 
+
+To understand the universality of Composing algorithm, I extend this idea to keyword spotting where the input data is audio. The goal of Keyword Spotting (KWS) is to detect an audio of pre-trained keywords, such as “Hey Siri”. Since the first neural network based approach by~\cite{chen2014small}, it has became standard approach for KWS. In this experiment, I implement \texttt{res15-narrow} introduced by~\cite{tang2018deep}, which achieves accuracy of 94\% for 12 keywords on Google’s Speech Commands Dataset~\cite{speechcommandsdataset}. \texttt{res15-narrow} comprises 6 residual blocks with 19 feature maps where each residual block is composed of bias-free convolutional and batch normalization layer.
+
+Common KWS experiments on Google’s Speech Commands Dataset involve only 12 keywords. However, since I am interested in evaluating stability of Composing algorithm with larger number of classes, all 30 keywords are used for this experiment. Following the standard feature extraction process for audio, I first construct Forty-dimensional Mel-Frequency Cepstrum Coefficient (MFCC) frames and stack them using 30ms windows with a 10ms shift. As the dataset consists of one-second long utterances of each word, the processed input has size of $101\times40$.
+
+Throughout 10 experiments, stochastic gradient descent is used for both pre-training and fine-tuning. Training starts with learning rate of 0.1 and achieves higher accuracy as it decreases the learning rate to 0.001 by factor of ten. Base models are trained for 30 epochs with learning rate decrease at 10 and 20th epochs and fine-tuned models are trained for 10 epochs with decrease at 4 and 7th epochs.
+
+Unlike MNIST, it is found that all three loss functions lead to reasonably good accuracy even with the composed models. First, CE loss achieves the best accuracy with \texttt{res15-narrow}; 93.09\% accuracy with the pre-trained model with average accuracy of 95.32\% with fine-tuned models. Softmax with BCE loss achieves 90.94\% accuracy with pre-trained model and average accuracy of 91.79\% with fine-tuned models. Sigmoid with BCE loss leads to the least accuracy of 89.62\% for pre-training and 91.31\% for fine-tuning.
+
+However, Figure \ref{figure:composed_kws} shows that sigmoid with BCE loss is found to be the most reliable loss function with Composing algorithm as it shows the least relative decrease of 1.44\%. CE loss and softmax with BCE loss shows greater rate of relative decrease, 3.18\% and 4.57\% respectively. As shown from the experiments with MNIST, decrease in accuracy is also found with KWS as number of classes increases.
+
 \subsection{CIFAR-100}
+CIFAR is a collection of tiny coloured images from the web~\cite{krizhevsky2009learning}. There exist two kinds of CIFAR varying on number of classes: CIFAR-10 and CIFAR-100. The following experiment is constructed with CIFAR-100 which constitutes of 600 images of 100 classes.
 
-CIFAR is a collection of tiny colour images from the web introduced by~\cite{krizhevsky2009learning}. There exist two kind of CIFAR varying on number of classes: CIFAR-10 and CIFAR-100. The following experiment is constructed with CIFAR-100 which constitutes of 600 images of 100 classes.
 
-For this experiment, I have implemented \texttt{DenseNet}, a state of the art model architecture for CIFAR dataset~\cite{huang2017densely}. Building upon the architecture with residual connection, the feature maps of all preceding layers are used as inputs for each layer. The network has three dense blocks with transition layers between which changes the feature-map sizes by convolution and pooling. The original implementation achieves accuracy of 80\% with 300 epochs of stochastic gradient descent. Learning rate must decrease throughout the training from 0.1 to 0.001 by factor of ten.
-
-Table \ref{table:cifar} summarizes the accuracy of models throughout Composing algorithm, trained with different loss functions. As training \texttt{DenseNet} for CIFAR-100 is very expensive, only one base model has been trained for each loss functions. However, composing experiments are conducted with 10 iterations, same as the preceding experiments. In this experiment, the base models are trained for 200 epochs achieving accuracy of 69.95\% for CE loss, 64.23\% for softmax with BCE loss, and 64.72\% for sigmoid with BCE loss. Fine-tuned models are trained for 100 epochs with average accuracy of 86.12\%, 88.63\%, and 87.79\% respectively.
 
 \begin{table}[t]
     \centering
-    \begin{tabular}{ccccccc}
+    \begin{tabular}{cccccc}
         \toprule[1pt]
         \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Loss function}} &
-        \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Base model}} &
-        \multicolumn{3}{c}{\bf Fine tuned model } &
-        \multicolumn{2}{c}{\bf Composed model } \\
-        \cmidrule(lr){3-5}
-        \cmidrule(lr){6-7}
-        & & average & minimum & maximum & accuracy & relative decrease \\
+        \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{\bf Pre-trained }} &
+        \textbf{Fine tuned} &
+        \multirow{2}{*}{\raisebox{-3\heavyrulewidth}{ \bf Composed }} &
+        \textbf{ Relative } \\
+        & & avg (min $\sim$ max) & & \textbf{ decrease } \\
         \midrule
-        LogSoftmax + NLL & 69.95 & 86.12 & 71.00 & 96.00 & 52.74 & 24.60 \\
-        Softmax + BCE & 64.23 & 88.63 & 79.50 & 97.50 & 52.04 & 18.98 \\
-        Sigmoid + BCE & 64.72 & 87.79 & 77.50 & 96.00 & 57.42 & 11.28 \\
+        LogSoftmax + NLL & 69.95 & 86.12 (71.00 $\sim$ 96.00) & 52.74 & 24.60 \\
+        Softmax + BCE & 64.23 & 88.63 (79.50 $\sim$ 97.50) & 52.04 & 18.98 \\
+        Sigmoid + BCE & 64.72 & 87.79 (77.50 $\sim$ 96.00) & 57.42 & 11.28 \\
         \bottomrule[1pt]
     \end{tabular}
-    \caption{Average accuracy of base, fine-tuned, and composed model for CIFAR-100}
+    \caption{Accuracy of base, fine-tuned, and composed model for CIFAR-100 (\%). Relative decrease is calculated using composed model with respect to pre-trained model.}
     \label{table:cifar}
 \end{table}
 
@@ -301,22 +295,27 @@ Table \ref{table:cifar} summarizes the accuracy of models throughout Composing a
     \label{figure:composed_cifar}
 \end{figure}
 
-Figure \ref{figure:composed_cifar} shows how accuracy of composed model changes as number of classes increases. It is found that CIFAR-100 introduces greater rate of relative decrease than MNIST and KWS. I believe this is due to the fact that CIFAR-100 involves much larger number of classes. Again, limitation of CE loss is clear as it leads to 24.60\% relative decrease with respect to the base model accuracy. On the other hand, sigmoid with BCE loss introduces the least relative decrease of 11.28\%.
 
-\section{Conclusion and Discussion}
+For this experiment, I have implemented \texttt{DenseNet}, a state of the art model for CIFAR dataset~\cite{huang2017densely}. Building upon a network architecture with residual connection, the feature maps of all preceding layers are used as inputs for each layer. The network has three dense blocks with transition layers between which changes the feature-map sizes by convolution and pooling. The original implementation achieves accuracy of 80\% with 300 epochs of stochastic gradient descent. Learning rate must decrease throughout the training from 0.1 to 0.001 by factor of ten.
 
-Realizing the inefficiency with the traditional classifier deployment, I propose Composing algorithm which achieves dynamic construction of a model for an efficient classification adapting to the change in target class set. As loss function plays a key role in Composing algorithm, it is shown both theoretically and empirically that CE loss leads to greater loss of accuracy than sigmoid with BCE loss.
+Table \ref{table:cifar} summarizes the accuracy of models constructed throughout the experiment. As training \texttt{DenseNet} for CIFAR-100 is very expensive, only one base model has been trained for each loss functions. However, composing step is repeated 10 times, being consistent with the preceding experiments. In this experiment, the pre-training is achieved with 200 epochs and this leads to accuracy of 69.95\% for CE loss, 64.23\% for softmax with BCE loss, and 64.72\% for sigmoid with BCE loss. Fine-tuned models are trained for 100 epochs with average accuracy of 86.12\%, 88.63\%, and 87.79\% respectively.
 
-Even though sigmoid with BCE loss leads to minimal decrease in accuracy, it is shown to have strong correlation with the number of classes. In the case of CIFAR-100, it has shown relative decrease of 11.28\% which can be crucial in many cases. Building upon this work, exploring other type of loss such as MSE loss and KL divergence loss would be an interesting study.
 
-Next, proposed Composing algorithm assumes that the last layer is fully-connected. However, some networks apply global averaging as it last operation to minimize computation. I strongly believe that the same approach works for such networks if fine-tuning is achieved for the last convolutional layer.
+Figure \ref{figure:composed_cifar} shows how accuracy of composed model changes as number of classes increases. It is found that CIFAR-100 introduces greater rate of decrease than MNIST and KWS. I believe this is due to the fact that CIFAR-100 involves much larger number of classes. Again, limitation of CE loss is clear as it leads to 24.60\% relative decrease with respect to the base model accuracy. Softmax with BCE loss introduces 18.98\% relative decrease while sigmoid with BCE loss shows the least decrease of 11.28\%.
 
-Overall, I have shown how much flexibility one can achieve for classification by fine-tuning the last fully-connected layer. However, as models involve more and more layers, such flexibility and computational savings may not add much benefit. Therefore, it is necessary extend this idea to save more computations than just last layer, in order for this idea to be meaningful for practical use.
+\section{Discussion}
+
+Throughout all three experiments, it is shown to have strong correlation with the number of classes. In the case of CIFAR-100, even sigmoid with BCE loss introduces relative decrease of 11.28\% which can be crucial in many cases. Therefore an algorithm which introduces the minimal accuracy decrease from the increase in number of classes would be preferred. I believe further experiments with other loss functions such as KL divergence and MSE would be helpful.
+
+Next, when I introduce Composing algorithm, I mention fully-connected layer explicitly as the last layer. One might believe that this algorithm only works with such network as all three experiments involve network has fully-connected connections for their last layer. However, I strongly believe that this algorithm can be extended to other network as long as correct layer is selected for fine-tuning. For example, some networks apply global averaging as its last operation to minimize computation. Since global averaging does not involve any parameter, the last valid layer for fine-tuning is penultimate layer. In such networks, penultimate layer is generally convolutional layers. Therefore, as long as fine-tuning leads to reasonable accuracy and weights are loaded correctly for the new penultimate layer, the same Composing algorithm should work on these networks.
+
+Lastly, I have shown that Composing algorithm saves computation as it does not calculate probabilities for unnecessary classes. However, as model involves more and more layers, such savings on computation may not add much benefit as this algorithm only deal with last fully-connected layer. Therefore, it is necessary to extend this idea for upstream layers and achieve greater rate of computational savings.
+
+\section{Conclusion}
+
+Realizing the limited flexibility of classifier, I present Composing algorithm which enables dynamic construction of a model adapting to the change in target classes. As loss function plays a key role in Composing algorithm, I study how CE loss can lead to accuracy degradation and demonstrate that sigmoid with BCE loss is more suitable. Throughout experiments conducted on MNIST, keyword spotting and CIFAR-100, I have shown feasibility of Composing algorithm. However, it is also observed that accuracy degradation is inevitable as number of classes grows.
 
 \newpage
-
-\section*{Acknowledgement}
-Thank people who have helped or influenced you in this project.
 
 \nocite{*}
 
