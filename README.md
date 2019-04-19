@@ -12,26 +12,32 @@ In this work, I introduce **Composing algorithm** enabling dynamic construction 
 
 ![Alt text](https://github.com/ljj7975/composable-model-exp/blob/master/report/composing_algo.png)
 
+## Experiments
+
 I also explore the feasibility of Composing algorithm on MNIST, Keyword Spotting and CIFAR-100.
+
+- loss functions plays a key role in Composing algorithm and sigmoid with BCE loss minimizes accuracy degradation.
+
+- Decrease in accuracy is inevitable as number of classes increases.
 
 Details about the experiments can be found [here](https://github.com/ljj7975/composable-model-exp/blob/master/report/project.pdf)
 
-## training base model and fine-tune for each class
+### training base model and fine-tune for each class
 ```
 python train.py -bc <base model config> -fc <fine tuning model config>
 ```
 
-## fine-tune model
+### fine-tune model
 ```
 python train.py -b <path to base model> -fc <fine tuning model config> -t <targets>
 ```
 
-## evaluation model
+### evaluation model
 ```
 python evaluate.py -b <path to base model> -ft <path to fine-tuned model>
 ```
 
-## train and run experiments
+### train and run experiments
 ```
 python experiment.py -t -nm <number of models to train> -ni <number of iterations for experiments> -e <experiments to run>
 ```
