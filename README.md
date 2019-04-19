@@ -1,4 +1,4 @@
-# Composable Model
+# Composing Algorithm
 In this work, I introduce **Composing algorithm** enabling dynamic construction of a classifier using class-level transfer 
 
 1. Pre-train a model using every class
