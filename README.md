@@ -16,11 +16,11 @@ In this work, I introduce **Composing algorithm** enabling dynamic construction 
 
 I also explore the feasibility of Composing algorithm on MNIST, Keyword Spotting and CIFAR-100.
 
-- loss functions plays a key role in Composing algorithm and sigmoid with BCE loss minimizes accuracy degradation.
+- Loss function plays a key role in Composing algorithm and sigmoid with BCE loss minimizes accuracy degradation between multi-class model and composed model.
 
 - Decrease in accuracy is inevitable as number of classes increases.
 
-Details about the experiments can be found [here](https://github.com/ljj7975/composable-model-exp/blob/master/report/project.pdf)
+Details about the experiments are summarized in [this report](https://github.com/ljj7975/composable-model-exp/blob/master/report/project.pdf)
 
 ### training base model and fine-tune for each class
 ```
