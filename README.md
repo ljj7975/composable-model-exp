@@ -1,5 +1,7 @@
 # Composing Algorithm
-In this work, I introduce **Composing algorithm** enabling dynamic construction of a neural network classifier using class-level transfer. Composing algorithm has following steps:
+In this work, I introduce **Composing algorithm** enabling dynamic construction of a neural network classifier using class-level transfer. Details can be found in [the write up](https://github.com/ljj7975/composable-model-exp/blob/master/report/project.pdf)
+
+Composing algorithm has following steps:
 
 1. Pre-train a model using every class
 2. Freeze the model parameters
@@ -19,8 +21,6 @@ I also explore the feasibility of Composing algorithm on MNIST, Keyword Spotting
 - Loss function plays a key role in Composing algorithm and sigmoid with BCE loss minimizes accuracy degradation between multi-class model and composed model.
 
 - Decrease in accuracy is inevitable as number of classes increases.
-
-Details about the experiments are summarized in [this report](https://github.com/ljj7975/composable-model-exp/blob/master/report/project.pdf)
 
 ### training base model and fine-tune for each class
 ```
